@@ -8,32 +8,32 @@ import (
 
 // AuthClient for interacting with Connect and API.
 type AuthClient struct {
-	clientID     string
-	clientSecret string
-	redirectURI  string
-	scope        []string
-	testMode     bool
+	ClientID     string
+	ClientSecret string
+	RedirectURI  string
+	Scope        []string
+	TestMode     bool
 }
 
 // VehicleInfo for Connect Direct
 type VehicleInfo struct {
-	make string
+	Make string
 }
 
 // SingleSelect for Connect Match
 type SingleSelect struct {
-	vin string
+	Vin string
 }
 
 // GetAuthURL builds an Auth URL for front-end
 func GetAuthURL(auth AuthClient, force bool, state string, vehicleInfo VehicleInfo, singleSelect SingleSelect) (string, error) {
 	var err error
 
-	if auth.clientID == "" {
+	if auth.ClientID == "" {
 		err = errors.New("Auth ClientID missing")
 	}
 
-	if auth.redirectURI == "" {
+	if auth.RedirectURI == "" {
 		err = errors.New("Auth RedirectURI missing")
 	}
 
@@ -50,13 +50,13 @@ func GetAuthURL(auth AuthClient, force bool, state string, vehicleInfo VehicleIn
 	}
 
 	query := connectURL.Query()
-	query.Set("client_id", auth.clientID)
+	query.Set("client_id", auth.ClientID)
 	query.Set("response_type", "code")
-	query.Set("scope", strings.Join(auth.scope, " "))
-	query.Set("redirect_uri", auth.redirectURI)
+	query.Set("scope", strings.Join(auth.Scope, " "))
+	query.Set("redirect_uri", auth.RedirectURI)
 	query.Set("approval_prompt", approvalPrompt)
 
-	if auth.testMode {
+	if auth.TestMode {
 		query.Set("mode", "test")
 	}
 
@@ -65,14 +65,14 @@ func GetAuthURL(auth AuthClient, force bool, state string, vehicleInfo VehicleIn
 	}
 
 	if vehicleInfo != (VehicleInfo{}) {
-		if vehicleInfo.make != "" {
-			query.Set("make", vehicleInfo.make)
+		if vehicleInfo.Make != "" {
+			query.Set("make", vehicleInfo.Make)
 		}
 	}
 
 	if singleSelect != (SingleSelect{}) {
-		if singleSelect.vin != "" {
-			query.Set("vin", singleSelect.vin)
+		if singleSelect.Vin != "" {
+			query.Set("vin", singleSelect.Vin)
 		}
 	}
 
