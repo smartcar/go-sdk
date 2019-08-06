@@ -1,29 +1,43 @@
 package smartcar
 
+import (
+	"errors"
+	"net/url"
+	"strings"
+)
+
+// AuthClient for interacting with Connect and API.
 type AuthClient struct {
 	clientID     string
 	clientSecret string
 	redirectURI  string
 	scope        []string
-	testMode		bool
+	testMode     bool
 }
 
+// VehicleInfo for Connect Direct
 type VehicleInfo struct {
 	make string
 }
 
+// SingleSelect for Connect Match
 type SingleSelect struct {
 	vin string
 }
 
-func GetAuthUrl(auth AuthClient, force bool, state string, vehicleInfo VehicleInfo, 
-	singleSelect SingleSelect) (authUrl string, err error) {
-	if auth.clientID == "" || auth.redirectURI == "" {
-		// Throw err
+// GetAuthURL builds an Auth URL for front-end
+func GetAuthURL(auth AuthClient, force bool, state string, vehicleInfo VehicleInfo, singleSelect SingleSelect) (string, error) {
+	var err error
+
+	if auth.clientID == "" {
+		err = errors.New("Auth ClientID missing")
 	}
-	
-	var approvalPrompt string
-	
+
+	if auth.redirectURI == "" {
+		err = errors.New("Auth RedirectURI missing")
+	}
+
+	approvalPrompt := "auto"
 	if force {
 		approvalPrompt = "force"
 	}
@@ -31,37 +45,38 @@ func GetAuthUrl(auth AuthClient, force bool, state string, vehicleInfo VehicleIn
 	// Build Connect URL from constants.go
 	connectURL := url.URL{
 		Scheme: ConnectScheme,
-		Host: ConnectHost,
-		Path: ConnectPath,
+		Host:   ConnectHost,
+		Path:   ConnectPath,
 	}
 
 	query := connectURL.Query()
-	query.set("client_id", auth.clientID)
-	query.set("response_type", "code")
-	query.set("mode", auth.testMode),
-	query.set("scope", strings.Join(auth.scopes,  " "))
-	query.set("redirect_uri", auth.redirectURI)
+	query.Set("client_id", auth.clientID)
+	query.Set("response_type", "code")
+	query.Set("scope", strings.Join(auth.scope, " "))
+	query.Set("redirect_uri", auth.redirectURI)
+	query.Set("approval_prompt", approvalPrompt)
 
 	if auth.testMode {
-		query.set("mode", "test")
+		query.Set("mode", "test")
 	}
 
 	if state != "" {
-		query.set("state", state)
+		query.Set("state", state)
 	}
 
 	if vehicleInfo != (VehicleInfo{}) {
 		if vehicleInfo.make != "" {
-			query.set("make", vehicleInfo.make)
+			query.Set("make", vehicleInfo.make)
 		}
 	}
 
 	if singleSelect != (SingleSelect{}) {
-		if SingleSelect.vin != "" {
-			query.set("vin", singleSelect.vin)
+		if singleSelect.vin != "" {
+			query.Set("vin", singleSelect.vin)
 		}
 	}
 
-	connectURL.RawQuery = query.encode()
+	connectURL.RawQuery = query.Encode()
 
+	return connectURL.String(), err
 }
