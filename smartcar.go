@@ -25,8 +25,21 @@ type SingleSelect struct {
 	Vin string
 }
 
+// AuthConnect contains all the fields than can be used to build auth URL.
+type AuthConnect struct {
+	Auth          AuthClient
+	ForceApproval bool
+	State         string
+	VehicleInfo
+	SingleSelect
+}
+
 // GetAuthURL builds an Auth URL for front-end
-func GetAuthURL(auth AuthClient, force bool, state string, vehicleInfo VehicleInfo, singleSelect SingleSelect) (string, error) {
+func GetAuthURL(authConnect AuthConnect) (string, error) {
+	auth := authConnect.Auth
+	vehicleInfo := authConnect.VehicleInfo
+	singleSelect := authConnect.SingleSelect
+	forceApproval, state := authConnect.ForceApproval, authConnect.State
 	var err error
 
 	if auth.ClientID == "" {
@@ -38,7 +51,7 @@ func GetAuthURL(auth AuthClient, force bool, state string, vehicleInfo VehicleIn
 	}
 
 	approvalPrompt := "auto"
-	if force {
+	if forceApproval {
 		approvalPrompt = "force"
 	}
 
