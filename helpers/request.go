@@ -1,20 +1,16 @@
 package smartcar
 
 import (
-	"encoding/json"
 	"io"
-	"log"
 	"net/http"
 )
 
 // POSTRequest is a helper for sending POST requests to API.
-func POSTRequest(url string, authorization string, data io.Reader) (*json.Decoder, error) {
-	var err error
-
+func POSTRequest(url string, authorization string, data io.Reader) (io.ReadCloser, error) {
 	client := &http.Client{}
 	req, err := http.NewRequest("POST", url, data)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
 	req.Header.Add("Authorization", authorization)
@@ -22,9 +18,9 @@ func POSTRequest(url string, authorization string, data io.Reader) (*json.Decode
 
 	res, err := client.Do(req)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 	defer res.Body.Close()
 
-	return json.NewDecoder(res.Body), err
+	return res.Body, err
 }

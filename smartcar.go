@@ -2,6 +2,7 @@ package smartcar
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"net/url"
 	"strings"
@@ -107,7 +108,6 @@ func GetAuthURL(authConnect AuthConnect) (string, error) {
 
 // ExchangeCode exchanges auth code for access and refresh tokens
 func ExchangeCode(auth AuthClient, authCode string) (Tokens, error) {
-	var err error
 	authString := auth.ClientID + ":" + auth.ClientSecret
 	encodedAuth := "Basic " + base64.StdEncoding.EncodeToString([]byte(authString))
 
@@ -116,17 +116,18 @@ func ExchangeCode(auth AuthClient, authCode string) (Tokens, error) {
 	data.Set("code", authCode)
 	data.Set("redirect_uri", auth.RedirectURI)
 
-	jsonDecoder, err := helpers.POSTRequest(ExchangeURL, encodedAuth, strings.NewReader(data.Encode()))
-	if err != nil {
-		err = errors.New("Auth ClientID missing")
-		return Tokens{}, err
+	response, resErr := helpers.POSTRequest(ExchangeURL, encodedAuth, strings.NewReader(data.Encode()))
+	if resErr != nil {
+		resErr = errors.New("Auth ClientID missing")
+		return Tokens{}, resErr
 	}
 
+	jsonDecoder := json.NewDecoder(response)
 	var tokens Tokens
 	jsonErr := jsonDecoder.Decode(&tokens)
 	if jsonErr != nil {
-		err = errors.New("Decoding JSON error")
-		return Tokens{}, err
+		jsonErr = errors.New("Decoding JSON error")
+		return Tokens{}, jsonErr
 	}
 
 	return tokens, nil
