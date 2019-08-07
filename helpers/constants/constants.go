@@ -1,4 +1,4 @@
-package smartcar
+package constants
 
 // Connect URL constants
 const (
@@ -7,5 +7,11 @@ const (
 	ConnectPath   = "oauth/authorize"
 )
 
-// Exchange URL constant
+// ExchangeURL constant
 const ExchangeURL = "https://auth.smartcar.com/oauth/token"
+
+// API URL constants
+const (
+	APIScheme = "https"
+	APIHost   = "api.smartcar.com"
+)

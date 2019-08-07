@@ -4,11 +4,13 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/url"
 	"strings"
 	"time"
 
-	request "github.com/smartcar/go-sdk/helpers"
+	"github.com/smartcar/go-sdk/helpers/constants"
+	"github.com/smartcar/go-sdk/helpers/requests"
 )
 
 // AuthClient for interacting with Connect and API.
@@ -49,6 +51,16 @@ type AuthConnect struct {
 	SingleSelect
 }
 
+// Error contains error type and message from Smartcar.
+type Error struct {
+	ErrorType string `json:"error"`
+	Message   string `json:"message"`
+}
+
+func (e *Error) Error() string {
+	return fmt.Sprintf("error: %s, message: %s", e.ErrorType, e.Message)
+}
+
 // GetAuthURL builds an Auth URL for front-end
 func GetAuthURL(authConnect AuthConnect) (string, error) {
 	auth := authConnect.Auth
@@ -74,9 +86,9 @@ func GetAuthURL(authConnect AuthConnect) (string, error) {
 
 	// Build Connect URL from constants.go
 	connectURL := url.URL{
-		Scheme: ConnectScheme,
-		Host:   ConnectHost,
-		Path:   ConnectPath,
+		Scheme: constants.ConnectScheme,
+		Host:   constants.ConnectHost,
+		Path:   constants.ConnectPath,
 	}
 
 	query := connectURL.Query()
@@ -121,15 +133,15 @@ func ExchangeCode(auth AuthClient, authCode string) (Tokens, error) {
 	data.Set("code", authCode)
 	data.Set("redirect_uri", auth.RedirectURI)
 
-	response, resErr := request.POST(ExchangeURL, encodedAuth, strings.NewReader(data.Encode()))
+	res, resErr := requests.POST(constants.ExchangeURL, encodedAuth, strings.NewReader(data.Encode()))
 	if resErr != nil {
 		resErr = errors.New("Auth ClientID missing")
 		return Tokens{}, resErr
 	}
-	defer response.Close()
+	defer res.Body.Close()
 
 	var tokens Tokens
-	jsonDecoder := json.NewDecoder(response)
+	jsonDecoder := json.NewDecoder(res.Body)
 	jsonErr := jsonDecoder.Decode(&tokens)
 	if jsonErr != nil {
 		jsonErr = errors.New("Decoding JSON error")
@@ -151,15 +163,15 @@ func RefreshToken(auth AuthClient, refreshToken string) (Tokens, error) {
 	data.Set("grant_type", "refresh_token")
 	data.Set("refresh_token", refreshToken)
 
-	response, resErr := request.POST(ExchangeURL, encodedAuth, strings.NewReader(data.Encode()))
+	res, resErr := requests.POST(constants.ExchangeURL, encodedAuth, strings.NewReader(data.Encode()))
 	if resErr != nil {
 		resErr = errors.New("Auth ClientID missing")
 		return Tokens{}, resErr
 	}
-	defer response.Close()
+	defer res.Body.Close()
 
 	var tokens Tokens
-	jsonDecoder := json.NewDecoder(response)
+	jsonDecoder := json.NewDecoder(res.Body)
 	jsonErr := jsonDecoder.Decode(&tokens)
 	if jsonErr != nil {
 		jsonErr = errors.New("Decoding JSON error")
@@ -171,7 +183,56 @@ func RefreshToken(auth AuthClient, refreshToken string) (Tokens, error) {
 	return tokens, nil
 }
 
-// TokenIsExpired checks if the token has expired
+// TokenIsExpired checks if the token has expired.
 func TokenIsExpired(expiration time.Time) bool {
 	return time.Now().After(expiration)
+}
+
+// VehicleIsCompatible checks compatibility for a vin with provided scopes.
+func VehicleIsCompatible(vin string, auth AuthClient) (bool, error) {
+	type CompatibleResponse struct {
+		Compatible bool `json:"compatible"`
+	}
+
+	compatiblityURL := url.URL{
+		Scheme: constants.APIScheme,
+		Host:   constants.APIHost,
+		Path:   "v1.0/compatibility",
+	}
+
+	query := compatiblityURL.Query()
+	query.Set("vin", vin)
+	query.Set("scope", strings.Join(auth.Scope, " "))
+	compatiblityURL.RawQuery = query.Encode()
+
+	fmt.Println(compatiblityURL.String())
+	authString := auth.ClientID + ":" + auth.ClientSecret
+	encodedAuth := "Basic " + base64.StdEncoding.EncodeToString([]byte(authString))
+
+	res, resErr := requests.GET(compatiblityURL.String(), encodedAuth)
+	if resErr != nil {
+		resErr = errors.New("Yoo")
+		return false, resErr
+	}
+	defer res.Body.Close()
+	jsonDecoder := json.NewDecoder(res.Body)
+
+	if res.StatusCode != 200 {
+		var err Error
+		jsonErr := jsonDecoder.Decode(&err)
+		if jsonErr != nil {
+			return false, jsonErr
+		}
+
+		return false, &Error{err.ErrorType, err.Message}
+	}
+
+	var compatibleResponse CompatibleResponse
+	jsonErr := jsonDecoder.Decode(&compatibleResponse)
+	if jsonErr != nil {
+		jsonErr = errors.New("Decoding JSON error")
+		return false, jsonErr
+	}
+
+	return compatibleResponse.Compatible, nil
 }
