@@ -1,12 +1,12 @@
-package smartcar
+package request
 
 import (
 	"io"
 	"net/http"
 )
 
-// POSTRequest is a helper for sending POST requests to API.
-func POSTRequest(url string, authorization string, data io.Reader) (io.ReadCloser, error) {
+// POST is a helper for sending POST requests to API.
+func POST(url string, authorization string, data io.Reader) (io.ReadCloser, error) {
 	client := &http.Client{}
 	req, err := http.NewRequest("POST", url, data)
 	if err != nil {

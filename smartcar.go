@@ -6,8 +6,9 @@ import (
 	"errors"
 	"net/url"
 	"strings"
+	"time"
 
-	helpers "github.com/smartcar/go-sdk/helpers"
+	request "github.com/smartcar/go-sdk/helpers"
 )
 
 // AuthClient for interacting with Connect and API.
@@ -31,8 +32,12 @@ type SingleSelect struct {
 
 // Tokens returned from exchange auth code.
 type Tokens struct {
-	Access  string `json:"access_token"`
-	Refresh string `json:"refresh_token"`
+	Type          string `json:"token_type"`
+	ExpiresIn     int    `json:"expires_in"`
+	Access        string `json:"access_token"`
+	AccessExpiry  time.Time
+	Refresh       string `json:"refresh_token"`
+	RefreshExpiry time.Time
 }
 
 // AuthConnect contains all the fields than can be used to build auth URL.
@@ -116,7 +121,7 @@ func ExchangeCode(auth AuthClient, authCode string) (Tokens, error) {
 	data.Set("code", authCode)
 	data.Set("redirect_uri", auth.RedirectURI)
 
-	response, resErr := helpers.POSTRequest(ExchangeURL, encodedAuth, strings.NewReader(data.Encode()))
+	response, resErr := request.POST(ExchangeURL, encodedAuth, strings.NewReader(data.Encode()))
 	if resErr != nil {
 		resErr = errors.New("Auth ClientID missing")
 		return Tokens{}, resErr
@@ -130,20 +135,23 @@ func ExchangeCode(auth AuthClient, authCode string) (Tokens, error) {
 		jsonErr = errors.New("Decoding JSON error")
 		return Tokens{}, jsonErr
 	}
+
+	tokens.AccessExpiry = time.Now().Add(time.Duration(tokens.ExpiresIn) * time.Second)
+	tokens.RefreshExpiry = time.Now().AddDate(0, 0, 60)
 
 	return tokens, nil
 }
 
 // RefreshToken renews access token
-func RefreshToken(auth AuthClient, authTokens Tokens) (Tokens, error) {
+func RefreshToken(auth AuthClient, refreshToken string) (Tokens, error) {
 	authString := auth.ClientID + ":" + auth.ClientSecret
 	encodedAuth := "Basic " + base64.StdEncoding.EncodeToString([]byte(authString))
 
 	data := url.Values{}
 	data.Set("grant_type", "refresh_token")
-	data.Set("refresh_token", authTokens.Refresh)
+	data.Set("refresh_token", refreshToken)
 
-	response, resErr := helpers.POSTRequest(ExchangeURL, encodedAuth, strings.NewReader(data.Encode()))
+	response, resErr := request.POST(ExchangeURL, encodedAuth, strings.NewReader(data.Encode()))
 	if resErr != nil {
 		resErr = errors.New("Auth ClientID missing")
 		return Tokens{}, resErr
@@ -158,5 +166,12 @@ func RefreshToken(auth AuthClient, authTokens Tokens) (Tokens, error) {
 		return Tokens{}, jsonErr
 	}
 
+	tokens.AccessExpiry = time.Now().Add(time.Duration(tokens.ExpiresIn) * time.Second)
+
 	return tokens, nil
+}
+
+// TokenIsExpired checks if the token has expired
+func TokenIsExpired(expiration time.Time) bool {
+	return time.Now().After(expiration)
 }
