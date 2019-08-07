@@ -20,7 +20,6 @@ func POSTRequest(url string, authorization string, data io.Reader) (io.ReadClose
 	if err != nil {
 		return nil, err
 	}
-	defer res.Body.Close()
 
 	return res.Body, err
 }

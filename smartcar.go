@@ -121,9 +121,10 @@ func ExchangeCode(auth AuthClient, authCode string) (Tokens, error) {
 		resErr = errors.New("Auth ClientID missing")
 		return Tokens{}, resErr
 	}
+	defer response.Close()
 
-	jsonDecoder := json.NewDecoder(response)
 	var tokens Tokens
+	jsonDecoder := json.NewDecoder(response)
 	jsonErr := jsonDecoder.Decode(&tokens)
 	if jsonErr != nil {
 		jsonErr = errors.New("Decoding JSON error")
