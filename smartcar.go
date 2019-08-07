@@ -1,9 +1,12 @@
 package smartcar
 
 import (
+	"encoding/base64"
 	"errors"
 	"net/url"
 	"strings"
+
+	helpers "github.com/smartcar/go-sdk/helpers"
 )
 
 // AuthClient for interacting with Connect and API.
@@ -25,6 +28,12 @@ type SingleSelect struct {
 	Vin string
 }
 
+// Tokens returned from exchange auth code.
+type Tokens struct {
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+}
+
 // AuthConnect contains all the fields than can be used to build auth URL.
 type AuthConnect struct {
 	Auth          AuthClient
@@ -44,10 +53,12 @@ func GetAuthURL(authConnect AuthConnect) (string, error) {
 
 	if auth.ClientID == "" {
 		err = errors.New("Auth ClientID missing")
+		return "", err
 	}
 
 	if auth.RedirectURI == "" {
 		err = errors.New("Auth RedirectURI missing")
+		return "", err
 	}
 
 	approvalPrompt := "auto"
@@ -91,5 +102,32 @@ func GetAuthURL(authConnect AuthConnect) (string, error) {
 
 	connectURL.RawQuery = query.Encode()
 
-	return connectURL.String(), err
+	return connectURL.String(), nil
+}
+
+// ExchangeCode exchanges auth code for access and refresh tokens
+func ExchangeCode(auth AuthClient, authCode string) (Tokens, error) {
+	var err error
+	authString := auth.ClientID + ":" + auth.ClientSecret
+	encodedAuth := "Basic " + base64.StdEncoding.EncodeToString([]byte(authString))
+
+	data := url.Values{}
+	data.Set("grant_type", "authorization_code")
+	data.Set("code", authCode)
+	data.Set("redirect_uri", auth.RedirectURI)
+
+	jsonDecoder, err := helpers.POSTRequest(ExchangeURL, encodedAuth, strings.NewReader(data.Encode()))
+	if err != nil {
+		err = errors.New("Auth ClientID missing")
+		return Tokens{}, err
+	}
+
+	var tokens Tokens
+	jsonErr := jsonDecoder.Decode(&tokens)
+	if jsonErr != nil {
+		err = errors.New("Decoding JSON error")
+		return Tokens{}, err
+	}
+
+	return tokens, nil
 }
