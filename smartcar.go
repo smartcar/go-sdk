@@ -31,8 +31,8 @@ type SingleSelect struct {
 
 // Tokens returned from exchange auth code.
 type Tokens struct {
-	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token"`
+	Access  string `json:"access_token"`
+	Refresh string `json:"refresh_token"`
 }
 
 // AuthConnect contains all the fields than can be used to build auth URL.
@@ -115,6 +115,33 @@ func ExchangeCode(auth AuthClient, authCode string) (Tokens, error) {
 	data.Set("grant_type", "authorization_code")
 	data.Set("code", authCode)
 	data.Set("redirect_uri", auth.RedirectURI)
+
+	response, resErr := helpers.POSTRequest(ExchangeURL, encodedAuth, strings.NewReader(data.Encode()))
+	if resErr != nil {
+		resErr = errors.New("Auth ClientID missing")
+		return Tokens{}, resErr
+	}
+	defer response.Close()
+
+	var tokens Tokens
+	jsonDecoder := json.NewDecoder(response)
+	jsonErr := jsonDecoder.Decode(&tokens)
+	if jsonErr != nil {
+		jsonErr = errors.New("Decoding JSON error")
+		return Tokens{}, jsonErr
+	}
+
+	return tokens, nil
+}
+
+// RefreshToken renews access token
+func RefreshToken(auth AuthClient, authTokens Tokens) (Tokens, error) {
+	authString := auth.ClientID + ":" + auth.ClientSecret
+	encodedAuth := "Basic " + base64.StdEncoding.EncodeToString([]byte(authString))
+
+	data := url.Values{}
+	data.Set("grant_type", "refresh_token")
+	data.Set("refresh_token", authTokens.Refresh)
 
 	response, resErr := helpers.POSTRequest(ExchangeURL, encodedAuth, strings.NewReader(data.Encode()))
 	if resErr != nil {
