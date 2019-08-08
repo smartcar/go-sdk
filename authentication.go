@@ -121,6 +121,18 @@ func ExchangeCode(auth AuthClient, authCode string) (Tokens, error) {
 
 	var tokens Tokens
 	jsonDecoder := json.NewDecoder(res.Body)
+
+	if res.StatusCode != 200 {
+		var err Error
+		jsonErr := jsonDecoder.Decode(&err)
+		if jsonErr != nil {
+			jsonErr = errors.New("Decoding JSON error")
+			return Tokens{}, jsonErr
+		}
+		err.Type = requests.HandleStatusCode(res.StatusCode)
+		return Tokens{}, &Error{err.Type, err.Name, err.Message}
+	}
+
 	jsonErr := jsonDecoder.Decode(&tokens)
 	if jsonErr != nil {
 		jsonErr = errors.New("Decoding JSON error")

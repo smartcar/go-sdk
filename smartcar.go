@@ -23,12 +23,13 @@ type AuthClient struct {
 
 // Error contains error type and message from Smartcar.
 type Error struct {
-	ErrorType string `json:"error"`
-	Message   string `json:"message"`
+	Type    string
+	Name    string `json:"error"`
+	Message string `json:"message"`
 }
 
 func (e *Error) Error() string {
-	return fmt.Sprintf("error: %s, message: %s", e.ErrorType, e.Message)
+	return fmt.Sprintf("type: %s, error: %s, message: %s", e.Type, e.Name, e.Message)
 }
 
 // VehicleIsCompatible checks compatibility for a vin with provided scopes.
@@ -65,8 +66,8 @@ func VehicleIsCompatible(vin string, auth AuthClient) (bool, error) {
 			jsonErr = errors.New("Decoding JSON error")
 			return false, jsonErr
 		}
-
-		return false, &Error{err.ErrorType, err.Message}
+		err.Type = requests.HandleStatusCode(res.StatusCode)
+		return false, &Error{err.Type, err.Name, err.Message}
 	}
 
 	var compatibleResponse CompatibleResponse
@@ -103,10 +104,11 @@ func GetUserID(accessToken string) (string, error) {
 		var err Error
 		jsonErr := jsonDecoder.Decode(&err)
 		if jsonErr != nil {
+			jsonErr = errors.New("Decoding JSON error")
 			return "", jsonErr
 		}
-
-		return "", &Error{err.ErrorType, err.Message}
+		err.Type = requests.HandleStatusCode(res.StatusCode)
+		return "", &Error{err.Type, err.Name, err.Message}
 	}
 
 	var userIDResponse UserIDResponse
@@ -143,10 +145,11 @@ func GetVehicleIDs(accessToken string) ([]string, error) {
 		var err Error
 		jsonErr := jsonDecoder.Decode(&err)
 		if jsonErr != nil {
+			jsonErr = errors.New("Decoding JSON error")
 			return nil, jsonErr
 		}
-
-		return nil, &Error{err.ErrorType, err.Message}
+		err.Type = requests.HandleStatusCode(res.StatusCode)
+		return nil, &Error{err.Type, err.Name, err.Message}
 	}
 
 	var vehicleIDResponse VehicleIDResponse
