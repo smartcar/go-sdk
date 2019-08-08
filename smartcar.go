@@ -80,7 +80,7 @@ func VehicleIsCompatible(vin string, auth AuthClient) (bool, error) {
 }
 
 // GetUserID returns the id of the vehicle owner
-func GetUserID(tokens Tokens) (string, error) {
+func GetUserID(accessToken string) (string, error) {
 	type UserIDResponse struct {
 		ID string `json:"id"`
 	}
@@ -91,7 +91,7 @@ func GetUserID(tokens Tokens) (string, error) {
 		Path:   "v1.0/user",
 	}
 
-	authorization := tokens.Type + " " + tokens.Access
+	authorization := "Bearer " + accessToken
 	res, resErr := requests.GET(compatiblityURL.String(), authorization)
 	if resErr != nil {
 		return "", resErr
@@ -117,4 +117,44 @@ func GetUserID(tokens Tokens) (string, error) {
 	}
 
 	return userIDResponse.ID, nil
+}
+
+// GetVehicleIDs returns the uuids associated to the access token.
+func GetVehicleIDs(accessToken string) ([]string, error) {
+	type VehicleIDResponse struct {
+		UUIDs []string `json:"vehicles"`
+	}
+
+	vehiclesURL := url.URL{
+		Scheme: constants.APIScheme,
+		Host:   constants.APIHost,
+		Path:   "v1.0/vehicles",
+	}
+
+	authorization := "Bearer " + accessToken
+	res, resErr := requests.GET(vehiclesURL.String(), authorization)
+	if resErr != nil {
+		return nil, resErr
+	}
+	defer res.Body.Close()
+	jsonDecoder := json.NewDecoder(res.Body)
+
+	if res.StatusCode != 200 {
+		var err Error
+		jsonErr := jsonDecoder.Decode(&err)
+		if jsonErr != nil {
+			return nil, jsonErr
+		}
+
+		return nil, &Error{err.ErrorType, err.Message}
+	}
+
+	var vehicleIDResponse VehicleIDResponse
+	jsonErr := jsonDecoder.Decode(&vehicleIDResponse)
+	if jsonErr != nil {
+		jsonErr = errors.New("Decoding JSON error")
+		return nil, jsonErr
+	}
+
+	return vehicleIDResponse.UUIDs, nil
 }
