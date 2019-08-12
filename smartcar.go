@@ -26,9 +26,13 @@ type Error struct {
 	Type    string
 	Name    string `json:"error"`
 	Message string `json:"message"`
+	Code    string `json:"code"`
 }
 
 func (e *Error) Error() string {
+	if e.Code != "" {
+		return fmt.Sprintf("type: %s, error: %s, message: %s, code: %s", e.Type, e.Name, e.Message, e.Code)
+	}
 	return fmt.Sprintf("type: %s, error: %s, message: %s", e.Type, e.Name, e.Message)
 }
 
@@ -67,7 +71,7 @@ func VehicleIsCompatible(vin string, auth AuthClient) (bool, error) {
 			return false, jsonErr
 		}
 		err.Type = requests.HandleStatusCode(res.StatusCode)
-		return false, &Error{err.Type, err.Name, err.Message}
+		return false, &Error{err.Type, err.Name, err.Message, err.Code}
 	}
 
 	var compatibleResponse CompatibleResponse
@@ -89,7 +93,7 @@ func GetUserID(accessToken string) (string, error) {
 	compatiblityURL := url.URL{
 		Scheme: constants.APIScheme,
 		Host:   constants.APIHost,
-		Path:   "v1.0/user",
+		Path:   constants.UserPath,
 	}
 
 	authorization := "Bearer " + accessToken
@@ -108,7 +112,7 @@ func GetUserID(accessToken string) (string, error) {
 			return "", jsonErr
 		}
 		err.Type = requests.HandleStatusCode(res.StatusCode)
-		return "", &Error{err.Type, err.Name, err.Message}
+		return "", &Error{err.Type, err.Name, err.Message, err.Code}
 	}
 
 	var userIDResponse UserIDResponse
@@ -130,7 +134,7 @@ func GetVehicleIDs(accessToken string) ([]string, error) {
 	vehiclesURL := url.URL{
 		Scheme: constants.APIScheme,
 		Host:   constants.APIHost,
-		Path:   "v1.0/vehicles",
+		Path:   constants.VehiclePath,
 	}
 
 	authorization := "Bearer " + accessToken
@@ -149,7 +153,7 @@ func GetVehicleIDs(accessToken string) ([]string, error) {
 			return nil, jsonErr
 		}
 		err.Type = requests.HandleStatusCode(res.StatusCode)
-		return nil, &Error{err.Type, err.Name, err.Message}
+		return nil, &Error{err.Type, err.Name, err.Message, err.Code}
 	}
 
 	var vehicleIDResponse VehicleIDResponse

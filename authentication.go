@@ -12,13 +12,13 @@ import (
 	"github.com/smartcar/go-sdk/helpers/requests"
 )
 
-// VehicleInfo for Connect Direct
-type VehicleInfo struct {
+// ConnectDirect bypasses brand selector (Pro).
+type ConnectDirect struct {
 	Make string
 }
 
-// SingleSelect for Connect Match
-type SingleSelect struct {
+// ConnectMatch only authorizes vehicle that match the fields (Pro).
+type ConnectMatch struct {
 	Vin string
 }
 
@@ -37,15 +37,15 @@ type AuthConnect struct {
 	Auth          AuthClient
 	ForceApproval bool
 	State         string
-	VehicleInfo
-	SingleSelect
+	ConnectDirect
+	ConnectMatch
 }
 
 // GetAuthURL builds an Auth URL for front-end
 func GetAuthURL(authConnect AuthConnect) (string, error) {
 	auth := authConnect.Auth
-	vehicleInfo := authConnect.VehicleInfo
-	singleSelect := authConnect.SingleSelect
+	vehicleInfo := authConnect.ConnectDirect
+	singleSelect := authConnect.ConnectMatch
 	forceApproval, state := authConnect.ForceApproval, authConnect.State
 	var err error
 
@@ -86,13 +86,13 @@ func GetAuthURL(authConnect AuthConnect) (string, error) {
 		query.Set("state", state)
 	}
 
-	if vehicleInfo != (VehicleInfo{}) {
+	if vehicleInfo != (ConnectDirect{}) {
 		if vehicleInfo.Make != "" {
 			query.Set("make", vehicleInfo.Make)
 		}
 	}
 
-	if singleSelect != (SingleSelect{}) {
+	if singleSelect != (ConnectMatch{}) {
 		if singleSelect.Vin != "" {
 			query.Set("vin", singleSelect.Vin)
 		}
@@ -130,7 +130,7 @@ func ExchangeCode(auth AuthClient, authCode string) (Tokens, error) {
 			return Tokens{}, jsonErr
 		}
 		err.Type = requests.HandleStatusCode(res.StatusCode)
-		return Tokens{}, &Error{err.Type, err.Name, err.Message}
+		return Tokens{}, &Error{err.Type, err.Name, err.Message, err.Code}
 	}
 
 	jsonErr := jsonDecoder.Decode(&tokens)

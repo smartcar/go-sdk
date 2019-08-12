@@ -1,6 +1,8 @@
 package requests
 
 import (
+	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 )
@@ -58,4 +60,15 @@ func HandleStatusCode(code int) string {
 	default:
 		return "gateway timeout"
 	}
+}
+
+// GetJSONMapFromResponse returns a map[string]string from a []byte.
+func GetJSONMapFromResponse(response []byte) (map[string]interface{}, error) {
+	jsonResponse := make(map[string]interface{})
+	jsonErr := json.Unmarshal(response, &jsonResponse)
+	if jsonErr != nil {
+		jsonErr = errors.New("Decoding JSON error")
+		return nil, jsonErr
+	}
+	return jsonResponse, nil
 }
