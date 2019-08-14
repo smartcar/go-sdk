@@ -45,7 +45,7 @@ func VehicleIsCompatible(vin string, auth AuthClient) (bool, error) {
 	compatiblityURL := url.URL{
 		Scheme: constants.APIScheme,
 		Host:   constants.APIHost,
-		Path:   "v1.0/compatibility",
+		Path:   constants.CompatibilityPath,
 	}
 
 	query := compatiblityURL.Query()

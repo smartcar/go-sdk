@@ -1,10 +1,9 @@
 package requests
 
 import (
-	"encoding/json"
-	"errors"
 	"io"
 	"net/http"
+	"reflect"
 )
 
 // GET is a helper for sending GET requests to Smartcar.
@@ -30,7 +29,26 @@ func POST(url string, authorization string, data io.Reader) (*http.Response, err
 	}
 
 	req.Header.Add("Authorization", authorization)
-	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+
+	if reflect.TypeOf(data).String() == "*bytes.Buffer" {
+		req.Header.Add("Content-Type", "application/json")
+	} else {
+		req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	}
+
+	res, err := client.Do(req)
+	return res, err
+}
+
+// DELETE is a helper for sending DELETE requests to Smartcar.
+func DELETE(url string, authorization string) (*http.Response, error) {
+	client := &http.Client{}
+	req, err := http.NewRequest("DELETE", url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Authorization", authorization)
 
 	res, err := client.Do(req)
 	return res, err
@@ -60,15 +78,4 @@ func HandleStatusCode(code int) string {
 	default:
 		return "gateway timeout"
 	}
-}
-
-// GetJSONMapFromResponse returns a map[string]string from a []byte.
-func GetJSONMapFromResponse(response []byte) (map[string]interface{}, error) {
-	jsonResponse := make(map[string]interface{})
-	jsonErr := json.Unmarshal(response, &jsonResponse)
-	if jsonErr != nil {
-		jsonErr = errors.New("Decoding JSON error")
-		return nil, jsonErr
-	}
-	return jsonResponse, nil
 }
