@@ -1,3 +1,4 @@
+// Package smartcar is the official Go SDK of the Smartcar API.
 package smartcar
 
 import (
@@ -15,13 +16,14 @@ import (
 	"github.com/smartcar/go-sdk/helpers/requests"
 )
 
-// Vehicle is initialized and passed into Smartcar vehicle functions.
+// Vehicle contains vehicle request information such as ID and AccessToken and used for Smartcar vehicle functions.
 type Vehicle struct {
 	ID          string
 	AccessToken string
 	UnitSystem  string
 }
 
+// VehicleInfoResponse contains the vehicle information response returned from the VehicleInfo function.
 type VehicleInfoResponse struct {
 	ID    string
 	Make  string
@@ -29,27 +31,31 @@ type VehicleInfoResponse struct {
 	Year  int
 }
 
+// VehicleLocationResponse contains the vehicle location response returned from the VehicleLocation function.
 type VehicleLocationResponse struct {
 	Latitude  float64
 	Longitude float64
 }
 
+// VehicleFuelEVResponse contains the vehicle FuelEV response returned from the VehicleFuel and VehicleBattery functions.
 type VehicleFuelEVResponse struct {
 	AmountRemaining  float64 `json:"amountRemaining"`
 	PercentRemaining float64 `json:"percentRemaining"`
 	Range            float64 `json:"range"`
 }
 
+// VehicleChargeResponse contains the vehicle charging state response returned from the VehicleCharge function.
 type VehicleChargeResponse struct {
 	IsPluggedIn bool
 	State       string
 }
 
+// VehicleResponse contains a general vehicle status response returned from the VehicleLock, VehicleUnlock and VehicleDisconnect functions.
 type VehicleResponse struct {
 	Status string `json:"status"`
 }
 
-// VehicleSetUnits sets the unit system that information of the vehicle will be returned in.
+// VehicleSetUnits takes a vehicle and sets the unit system that information for the vehicle will be returned in.
 func VehicleSetUnits(vehicle *Vehicle, unit string) error {
 	if !(unit == "metric" || unit == "imperial") {
 		return errors.New("unit must either be metric or imperial")
@@ -58,6 +64,7 @@ func VehicleSetUnits(vehicle *Vehicle, unit string) error {
 	return nil
 }
 
+// vehicleAPIRequest is an internal functions used to make requests to Smartcar's vehicle API.
 func vehicleAPIRequest(vehicle Vehicle, endpoint string, httpType string, action string) (map[string]interface{}, error) {
 	requestPath := constants.VehiclePath + vehicle.ID + endpoint
 	vehicleURL := url.URL{
@@ -125,6 +132,7 @@ func vehicleAPIRequest(vehicle Vehicle, endpoint string, httpType string, action
 	return jsonResponse, nil
 }
 
+// VehicleInfo uses a Vehicle and returns vehicle information from Smartcar in a VehicleInfoResponse.
 func VehicleInfo(vehicle Vehicle) (VehicleInfoResponse, error) {
 	response, err := vehicleAPIRequest(vehicle, "", "GET", "")
 	if err != nil {
@@ -140,6 +148,7 @@ func VehicleInfo(vehicle Vehicle) (VehicleInfoResponse, error) {
 	return vehicleInfo, nil
 }
 
+// VehicleVIN uses a Vehicle and returns the vehicle's VIN from Smartcar in a string.
 func VehicleVIN(vehicle Vehicle) (string, error) {
 	response, err := vehicleAPIRequest(vehicle, "/vin", "GET", "")
 	if err != nil {
@@ -149,6 +158,7 @@ func VehicleVIN(vehicle Vehicle) (string, error) {
 	return response["vin"].(string), nil
 }
 
+// VehicleOdometer uses a Vehicle and returns the vehicle's odometer reading from Smartcar in a float64.
 func VehicleOdometer(vehicle Vehicle) (float64, error) {
 	response, err := vehicleAPIRequest(vehicle, "/odometer", "GET", "")
 	if err != nil {
@@ -158,6 +168,7 @@ func VehicleOdometer(vehicle Vehicle) (float64, error) {
 	return response["distance"].(float64), nil
 }
 
+// VehicleLocation uses a Vehicle and returns the vehicle's location from Smartcar in a VehicleLocationResponse.
 func VehicleLocation(vehicle Vehicle) (VehicleLocationResponse, error) {
 	response, err := vehicleAPIRequest(vehicle, "/location", "GET", "")
 	if err != nil {
@@ -173,6 +184,7 @@ func VehicleLocation(vehicle Vehicle) (VehicleLocationResponse, error) {
 	return vehicleLocation, nil
 }
 
+// VehicleFuel uses a Vehicle and returns the vehicle's fuel level from Smartcar in a VehicleFuelEVResponse.
 func VehicleFuel(vehicle Vehicle) (VehicleFuelEVResponse, error) {
 	response, err := vehicleAPIRequest(vehicle, "/fuel", "GET", "")
 	if err != nil {
@@ -188,6 +200,7 @@ func VehicleFuel(vehicle Vehicle) (VehicleFuelEVResponse, error) {
 	return vehicleFuel, nil
 }
 
+// VehicleBattery uses a Vehicle and returns the vehicle's battery level from Smartcar in a VehicleFuelEVResponse.
 func VehicleBattery(vehicle Vehicle) (VehicleFuelEVResponse, error) {
 	response, err := vehicleAPIRequest(vehicle, "/battery", "GET", "")
 	if err != nil {
@@ -203,6 +216,7 @@ func VehicleBattery(vehicle Vehicle) (VehicleFuelEVResponse, error) {
 	return vehicleBattery, nil
 }
 
+// VehicleCharge uses a Vehicle and returns the vehicle's charging status from Smartcar in a VehicleChargeResponse.
 func VehicleCharge(vehicle Vehicle) (VehicleChargeResponse, error) {
 	response, err := vehicleAPIRequest(vehicle, "/charge", "GET", "")
 	if err != nil {
@@ -218,6 +232,7 @@ func VehicleCharge(vehicle Vehicle) (VehicleChargeResponse, error) {
 	return vehicleCharge, nil
 }
 
+// VehiclePermissions uses a Vehicle and returns the vehicle's authorized permissions in a []string.
 func VehiclePermissions(vehicle Vehicle) ([]string, error) {
 	response, err := vehicleAPIRequest(vehicle, "/permissions", "GET", "")
 	if err != nil {
@@ -233,6 +248,7 @@ func VehiclePermissions(vehicle Vehicle) ([]string, error) {
 	return permissions, nil
 }
 
+// VehicleHasPermission uses a Vehicle and a permission and returns whether the vehicle has the specified permission.
 func VehicleHasPermission(vehicle Vehicle, permission string) (bool, error) {
 	vehiclePermissions, err := VehiclePermissions(vehicle)
 	if err != nil {
@@ -248,6 +264,7 @@ func VehicleHasPermission(vehicle Vehicle, permission string) (bool, error) {
 	return false, nil
 }
 
+// VehicleHasPermissions uses a Vehicle and a slice of permissions and returns whether the vehicle has the specified permissions.
 func VehicleHasPermissions(vehicle Vehicle, permissions []string) (bool, error) {
 	vehiclePermissions, err := VehiclePermissions(vehicle)
 	if err != nil {
@@ -272,6 +289,8 @@ func VehicleHasPermissions(vehicle Vehicle, permissions []string) (bool, error) 
 	return true, nil
 }
 
+// VehicleLock uses a Vehicle to send a vehicle lock request to Smartcar.
+// It returns whether the request was successful in a VehicleResponse.
 func VehicleLock(vehicle Vehicle) (VehicleResponse, error) {
 	response, err := vehicleAPIRequest(vehicle, "/security", "POST", "LOCK")
 	if err != nil {
@@ -287,6 +306,8 @@ func VehicleLock(vehicle Vehicle) (VehicleResponse, error) {
 	return vehicleLockResponse, nil
 }
 
+// VehicleUnlock uses a Vehicle to send a vehicle unlock request to Smartcar.
+// It returns whether the request was successful in a VehicleResponse.
 func VehicleUnlock(vehicle Vehicle) (VehicleResponse, error) {
 	response, err := vehicleAPIRequest(vehicle, "/security", "POST", "UNLOCK")
 	if err != nil {
@@ -302,6 +323,8 @@ func VehicleUnlock(vehicle Vehicle) (VehicleResponse, error) {
 	return vehicleUnlockResponse, nil
 }
 
+// VehicleDisconnect uses a Vehicle to disconnect it from the application.
+// It returns whether the disconnect was successful in a VehicleResponse.
 func VehicleDisconnect(vehicle Vehicle) (VehicleResponse, error) {
 	response, err := vehicleAPIRequest(vehicle, "/application", "DELETE", "")
 	if err != nil {

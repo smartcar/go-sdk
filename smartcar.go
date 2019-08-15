@@ -1,3 +1,4 @@
+// Package smartcar is the official Go SDK of the Smartcar API.
 package smartcar
 
 import (
@@ -12,7 +13,7 @@ import (
 	"github.com/smartcar/go-sdk/helpers/requests"
 )
 
-// AuthClient for interacting with Connect and API.
+// AuthClient is used to store your auth credentials when authenticating with Smartcar.
 type AuthClient struct {
 	ClientID     string
 	ClientSecret string
@@ -21,7 +22,7 @@ type AuthClient struct {
 	TestMode     bool
 }
 
-// Error contains error type and message from Smartcar.
+// Error returns error names, messages and codes from requests to the Smartcar API.
 type Error struct {
 	Type    string
 	Name    string `json:"error"`
@@ -36,7 +37,8 @@ func (e *Error) Error() string {
 	return fmt.Sprintf("type: %s, error: %s, message: %s", e.Type, e.Name, e.Message)
 }
 
-// VehicleIsCompatible checks compatibility for a vin with provided scopes.
+// VehicleIsCompatible checks compatibility for a vehicle VIN with Smartcar for the provided scopes.
+// It takes a VIN and auth credentials and will return a bool indicating compatibility.
 func VehicleIsCompatible(vin string, auth AuthClient) (bool, error) {
 	type CompatibleResponse struct {
 		Compatible bool `json:"compatible"`
@@ -84,7 +86,7 @@ func VehicleIsCompatible(vin string, auth AuthClient) (bool, error) {
 	return compatibleResponse.Compatible, nil
 }
 
-// GetUserID returns the id of the vehicle owner
+// GetUserID returns the ID of the vehicle owner using the access token.
 func GetUserID(accessToken string) (string, error) {
 	type UserIDResponse struct {
 		ID string `json:"id"`
@@ -125,7 +127,7 @@ func GetUserID(accessToken string) (string, error) {
 	return userIDResponse.ID, nil
 }
 
-// GetVehicleIDs returns the uuids associated to the access token.
+// GetVehicleIDs uses an access token and returns the IDs of the vehicles associated with the token.
 func GetVehicleIDs(accessToken string) ([]string, error) {
 	type VehicleIDResponse struct {
 		UUIDs []string `json:"vehicles"`

@@ -1,3 +1,4 @@
+// Package smartcar is the official Go SDK of the Smartcar API
 package smartcar
 
 import (
@@ -12,17 +13,19 @@ import (
 	"github.com/smartcar/go-sdk/helpers/requests"
 )
 
-// ConnectDirect bypasses brand selector (Pro).
+// ConnectDirect uses a make to bypass the Smartcar Connect brand selector.
+// Smartcar Pro feature.
 type ConnectDirect struct {
 	Make string
 }
 
-// ConnectMatch only authorizes vehicle that match the fields (Pro).
+// ConnectMatch will only authorize vehicles that match the given properties.
+// Smartcar Pro feature.
 type ConnectMatch struct {
 	Vin string
 }
 
-// Tokens returned from exchange auth code.
+// Tokens contains the tokens and their expiry that are returned from exchanging an authorization code.
 type Tokens struct {
 	Type          string `json:"token_type"`
 	ExpiresIn     int    `json:"expires_in"`
@@ -32,7 +35,7 @@ type Tokens struct {
 	RefreshExpiry time.Time
 }
 
-// AuthConnect contains all the fields than can be used to build auth URL.
+// AuthConnect contains the AuthClient, Pro authorization features and all fields that can be used to construct an auth URL.
 type AuthConnect struct {
 	Auth          AuthClient
 	ForceApproval bool
@@ -41,7 +44,7 @@ type AuthConnect struct {
 	ConnectMatch
 }
 
-// GetAuthURL builds an Auth URL for front-end
+// GetAuthURL uses an AuthConnect to return a Smartcar Connect URL that can be displayed to users.
 func GetAuthURL(authConnect AuthConnect) (string, error) {
 	auth := authConnect.Auth
 	vehicleInfo := authConnect.ConnectDirect
@@ -103,7 +106,7 @@ func GetAuthURL(authConnect AuthConnect) (string, error) {
 	return connectURL.String(), nil
 }
 
-// ExchangeCode exchanges auth code for access and refresh tokens
+// ExchangeCode takes an AuthClient and an authorization code from Connect to return access and refresh tokens.
 func ExchangeCode(auth AuthClient, authCode string) (Tokens, error) {
 	authString := auth.ClientID + ":" + auth.ClientSecret
 	encodedAuth := "Basic " + base64.StdEncoding.EncodeToString([]byte(authString))
@@ -145,7 +148,7 @@ func ExchangeCode(auth AuthClient, authCode string) (Tokens, error) {
 	return tokens, nil
 }
 
-// RefreshToken renews access token
+// RefreshToken uses a basic AuthClient containing your client ID and a refresh token to return new access tokens.
 func RefreshToken(auth AuthClient, refreshToken string) (Tokens, error) {
 	authString := auth.ClientID + ":" + auth.ClientSecret
 	encodedAuth := "Basic " + base64.StdEncoding.EncodeToString([]byte(authString))
@@ -173,7 +176,7 @@ func RefreshToken(auth AuthClient, refreshToken string) (Tokens, error) {
 	return tokens, nil
 }
 
-// TokenIsExpired checks if the token has expired.
+// TokenIsExpired checks if a token is expired by passing in the token expiry time.
 func TokenIsExpired(expiration time.Time) bool {
 	return time.Now().After(expiration)
 }
