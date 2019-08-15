@@ -1,4 +1,3 @@
-// Package smartcar is the official Go SDK of the Smartcar API
 package smartcar
 
 import (

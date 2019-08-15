@@ -1,4 +1,6 @@
 // Package smartcar is the official Go SDK of the Smartcar API.
+// Smartcar is the only vehicle API built for developers, by developers.
+// Learn more about Smartcar here, https://smartcar.com/
 package smartcar
 
 import (
