@@ -60,29 +60,3 @@ func DELETE(url string, authorization string) (*http.Response, error) {
 	res, err := client.Do(req)
 	return res, err
 }
-
-// HandleStatusCode returns error type from Smartcar depending on HTTP code.
-func HandleStatusCode(code int) string {
-	switch code {
-	case 400:
-		return "validation"
-	case 401:
-		return "authentication"
-	case 403:
-		return "permission"
-	case 404:
-		return "resource not found"
-	case 409:
-		return "vehicle state"
-	case 429:
-		return "rate limiting"
-	case 430:
-		return "monthly limit exceeded"
-	case 500:
-		return "server error"
-	case 501:
-		return "smartcar or vehicle not capable"
-	default:
-		return "gateway timeout"
-	}
-}

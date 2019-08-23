@@ -12,15 +12,15 @@ import (
 	"github.com/smartcar/go-sdk/helpers/requests"
 )
 
-// ConnectDirect uses a make to bypass the Smartcar Connect brand selector.
+// MakeBypass uses a make to bypass the Smartcar Connect brand selector.
 // Smartcar Pro feature.
-type ConnectDirect struct {
+type MakeBypass struct {
 	Make string
 }
 
-// ConnectMatch will only authorize vehicles that match the given properties.
+// SingleSelect will only authorize vehicles that match the given properties.
 // Smartcar Pro feature.
-type ConnectMatch struct {
+type SingleSelect struct {
 	Vin string
 }
 
@@ -39,15 +39,15 @@ type AuthConnect struct {
 	Auth          AuthClient
 	ForceApproval bool
 	State         string
-	ConnectDirect
-	ConnectMatch
+	MakeBypass
+	SingleSelect
 }
 
 // GetAuthURL uses an AuthConnect to return a Smartcar Connect URL that can be displayed to users.
 func GetAuthURL(authConnect AuthConnect) (string, error) {
 	auth := authConnect.Auth
-	vehicleInfo := authConnect.ConnectDirect
-	singleSelect := authConnect.ConnectMatch
+	vehicleInfo := authConnect.MakeBypass
+	singleSelect := authConnect.SingleSelect
 	forceApproval, state := authConnect.ForceApproval, authConnect.State
 	var err error
 
@@ -88,13 +88,13 @@ func GetAuthURL(authConnect AuthConnect) (string, error) {
 		query.Set("state", state)
 	}
 
-	if vehicleInfo != (ConnectDirect{}) {
+	if vehicleInfo != (MakeBypass{}) {
 		if vehicleInfo.Make != "" {
 			query.Set("make", vehicleInfo.Make)
 		}
 	}
 
-	if singleSelect != (ConnectMatch{}) {
+	if singleSelect != (SingleSelect{}) {
 		if singleSelect.Vin != "" {
 			query.Set("vin", singleSelect.Vin)
 		}
@@ -131,8 +131,7 @@ func ExchangeCode(auth AuthClient, authCode string) (Tokens, error) {
 			jsonErr = errors.New("Decoding JSON error")
 			return Tokens{}, jsonErr
 		}
-		err.Type = requests.HandleStatusCode(res.StatusCode)
-		return Tokens{}, &Error{err.Type, err.Name, err.Message, err.Code}
+		return Tokens{}, &Error{err.Name, err.Message, err.Code}
 	}
 
 	jsonErr := jsonDecoder.Decode(&tokens)

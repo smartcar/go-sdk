@@ -24,16 +24,16 @@ type Vehicle struct {
 
 // VehicleInfoResponse contains the vehicle information response returned from the VehicleInfo function.
 type VehicleInfoResponse struct {
-	ID    string
-	Make  string
-	Model string
-	Year  int
+	ID    string `json:"id"`
+	Make  string `json:"make"`
+	Model string `json:"model"`
+	Year  int    `json:"year"`
 }
 
 // VehicleLocationResponse contains the vehicle location response returned from the VehicleLocation function.
 type VehicleLocationResponse struct {
-	Latitude  float64
-	Longitude float64
+	Latitude  float64 `json:"latitude"`
+	Longitude float64 `json:"longitude"`
 }
 
 // VehicleFuelEVResponse contains the vehicle FuelEV response returned from the VehicleFuel and VehicleBattery functions.
@@ -45,8 +45,8 @@ type VehicleFuelEVResponse struct {
 
 // VehicleChargeResponse contains the vehicle charging state response returned from the VehicleCharge function.
 type VehicleChargeResponse struct {
-	IsPluggedIn bool
-	State       string
+	IsPluggedIn bool   `json:"isPluggedIn"`
+	State       string `json:"state"`
 }
 
 // VehicleResponse contains a general vehicle status response returned from the VehicleLock, VehicleUnlock and VehicleDisconnect functions.
@@ -117,8 +117,7 @@ func vehicleAPIRequest(vehicle Vehicle, endpoint string, httpType string, action
 			jsonErr = errors.New("Decoding JSON error")
 			return nil, jsonErr
 		}
-		err.Type = requests.HandleStatusCode(res.StatusCode)
-		return nil, &Error{err.Type, err.Name, err.Message, err.Code}
+		return nil, &Error{err.Name, err.Message, err.Code}
 	}
 
 	jsonResponse := make(map[string]interface{})
