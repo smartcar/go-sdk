@@ -246,22 +246,6 @@ func VehiclePermissions(vehicle Vehicle) ([]string, error) {
 	return permissions, nil
 }
 
-// VehicleHasPermission uses a Vehicle and a permission and returns whether the vehicle has the specified permission.
-func VehicleHasPermission(vehicle Vehicle, permission string) (bool, error) {
-	vehiclePermissions, err := VehiclePermissions(vehicle)
-	if err != nil {
-		return false, err
-	}
-
-	for _, vehiclePermission := range vehiclePermissions {
-		if permission == vehiclePermission {
-			return true, nil
-		}
-	}
-
-	return false, nil
-}
-
 // VehicleHasPermissions uses a Vehicle and a slice of permissions and returns whether the vehicle has the specified permissions.
 func VehicleHasPermissions(vehicle Vehicle, permissions []string) (bool, error) {
 	vehiclePermissions, err := VehiclePermissions(vehicle)

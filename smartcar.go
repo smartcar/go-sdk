@@ -40,7 +40,7 @@ func (e *Error) Error() string {
 
 // VehicleIsCompatible checks compatibility for a vehicle VIN with Smartcar for the provided scopes.
 // It takes a VIN and auth credentials and will return a bool indicating compatibility.
-func VehicleIsCompatible(vin string, auth AuthClient) (bool, error) {
+func VehicleIsCompatible(auth AuthClient, vin string) (bool, error) {
 	type CompatibleResponse struct {
 		Compatible bool `json:"compatible"`
 	}
