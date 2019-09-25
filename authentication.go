@@ -2,8 +2,8 @@ package smartcar
 
 import (
 	"encoding/base64"
-	"encoding/json"
 	"errors"
+	"net/http"
 	"net/url"
 	"strings"
 	"time"
@@ -11,6 +11,14 @@ import (
 	"github.com/smartcar/go-sdk/helpers/constants"
 	"github.com/smartcar/go-sdk/helpers/requests"
 )
+
+/*
+
+The following 2 are PRO features
+ConnectDirect -> MakeByPass
+ConnectMatch -> Single Select
+
+*/
 
 // MakeBypass uses a make to bypass the Smartcar Connect brand selector.
 // Smartcar Pro feature.
@@ -24,9 +32,17 @@ type SingleSelect struct {
 	Vin string
 }
 
-// Tokens contains the tokens and their expiry that are returned from exchanging an authorization code.
-type Tokens struct {
-	Type          string `json:"token_type"`
+// AuthClient is used to store your auth credentials when authenticating with Smartcar.
+type AuthClient struct {
+	ClientID     string
+	ClientSecret string
+	RedirectURI  string
+	Scope        []string
+	TestMode     bool
+}
+
+// Token contains the tokens and their expiry that are returned from exchanging an authorization code.
+type Token struct {
 	ExpiresIn     int    `json:"expires_in"`
 	Access        string `json:"access_token"`
 	AccessExpiry  time.Time
@@ -34,36 +50,25 @@ type Tokens struct {
 	RefreshExpiry time.Time
 }
 
-// AuthConnect contains the AuthClient, Pro authorization features and all fields that can be used to construct an auth URL.
-type AuthConnect struct {
-	Auth          AuthClient
+// AuthURLOptions contains the AuthClient, Pro authorization features and all fields that can be used to construct an auth URL.
+type AuthURLOptions struct {
 	ForceApproval bool
 	State         string
+	TestMode      bool
 	MakeBypass
 	SingleSelect
 }
 
 // GetAuthURL uses an AuthConnect to return a Smartcar Connect URL that can be displayed to users.
-func GetAuthURL(authConnect AuthConnect) (string, error) {
-	auth := authConnect.Auth
-	vehicleInfo := authConnect.MakeBypass
-	singleSelect := authConnect.SingleSelect
-	forceApproval, state := authConnect.ForceApproval, authConnect.State
-	var err error
+func (authClient *AuthClient) GetAuthURL(options AuthURLOptions) (string, error) {
+	forceApproval, state, singleSelect, vehicleInfo := options.ForceApproval, options.State, options.SingleSelect, options.MakeBypass
 
-	if auth.ClientID == "" {
-		err = errors.New("Auth ClientID missing")
-		return "", err
+	if authClient.ClientID == "" {
+		return "", errors.New("AuthClient.ClientID missing")
 	}
 
-	if auth.RedirectURI == "" {
-		err = errors.New("Auth RedirectURI missing")
-		return "", err
-	}
-
-	approvalPrompt := "auto"
-	if forceApproval {
-		approvalPrompt = "force"
+	if authClient.RedirectURI == "" {
+		return "", errors.New("AuthClient.RedirectURI missing")
 	}
 
 	// Build Connect URL from constants.go
@@ -74,15 +79,23 @@ func GetAuthURL(authConnect AuthConnect) (string, error) {
 	}
 
 	query := connectURL.Query()
-	query.Set("client_id", auth.ClientID)
 	query.Set("response_type", "code")
-	query.Set("scope", strings.Join(auth.Scope, " "))
-	query.Set("redirect_uri", auth.RedirectURI)
-	query.Set("approval_prompt", approvalPrompt)
+	query.Set("client_id", authClient.ClientID)
+	query.Set("redirect_uri", authClient.RedirectURI)
 
-	if auth.TestMode {
+	if authClient.Scope != nil {
+		query.Set("scope", strings.Join(authClient.Scope, " "))
+	}
+
+	if authClient.TestMode {
 		query.Set("mode", "test")
 	}
+
+	approvalPrompt := "auto"
+	if forceApproval {
+		approvalPrompt = "force"
+	}
+	query.Set("approval_prompt", approvalPrompt)
 
 	if state != "" {
 		query.Set("state", state)
@@ -95,8 +108,9 @@ func GetAuthURL(authConnect AuthConnect) (string, error) {
 	}
 
 	if singleSelect != (SingleSelect{}) {
+		query.Set("single_select", "true")
 		if singleSelect.Vin != "" {
-			query.Set("vin", singleSelect.Vin)
+			query.Set("single_select_vin", singleSelect.Vin)
 		}
 	}
 
@@ -106,75 +120,60 @@ func GetAuthURL(authConnect AuthConnect) (string, error) {
 }
 
 // ExchangeCode takes an AuthClient and an authorization code from Connect to return access and refresh tokens.
-func ExchangeCode(auth AuthClient, authCode string) (Tokens, error) {
-	authString := auth.ClientID + ":" + auth.ClientSecret
-	encodedAuth := "Basic " + base64.StdEncoding.EncodeToString([]byte(authString))
+func (authClient *AuthClient) ExchangeCode(authCode string) (Token, error) {
 
 	data := url.Values{}
 	data.Set("grant_type", "authorization_code")
 	data.Set("code", authCode)
-	data.Set("redirect_uri", auth.RedirectURI)
+	data.Set("redirect_uri", authClient.RedirectURI)
 
-	res, resErr := requests.POST(constants.ExchangeURL, encodedAuth, strings.NewReader(data.Encode()))
-	if resErr != nil {
-		return Tokens{}, resErr
+	res, err := authClient.request(requests.POST, constants.ExchangeURL, data.Encode())
+	if err != nil {
+		return Token{}, err
 	}
+
+	formattedResponse := new(Token)
+
 	defer res.Body.Close()
+	requests.FormatResponse(res.Body, formattedResponse)
 
-	var tokens Tokens
-	jsonDecoder := json.NewDecoder(res.Body)
+	formattedResponse.AccessExpiry = time.Now().Add(time.Duration(formattedResponse.ExpiresIn) * time.Second)
+	formattedResponse.RefreshExpiry = time.Now().AddDate(0, 0, 60)
 
-	if res.StatusCode != 200 {
-		var err Error
-		jsonErr := jsonDecoder.Decode(&err)
-		if jsonErr != nil {
-			jsonErr = errors.New("Decoding JSON error")
-			return Tokens{}, jsonErr
-		}
-		return Tokens{}, &Error{err.Name, err.Message, err.Code}
-	}
-
-	jsonErr := jsonDecoder.Decode(&tokens)
-	if jsonErr != nil {
-		jsonErr = errors.New("Decoding JSON error")
-		return Tokens{}, jsonErr
-	}
-
-	tokens.AccessExpiry = time.Now().Add(time.Duration(tokens.ExpiresIn) * time.Second)
-	tokens.RefreshExpiry = time.Now().AddDate(0, 0, 60)
-
-	return tokens, nil
+	return *formattedResponse, nil
 }
 
 // RefreshToken uses a basic AuthClient containing your client ID and a refresh token to return new access tokens.
-func RefreshToken(auth AuthClient, refreshToken string) (Tokens, error) {
-	authString := auth.ClientID + ":" + auth.ClientSecret
-	encodedAuth := "Basic " + base64.StdEncoding.EncodeToString([]byte(authString))
+func (authClient *AuthClient) RefreshToken(refreshToken string) (Token, error) {
 
 	data := url.Values{}
 	data.Set("grant_type", "refresh_token")
 	data.Set("refresh_token", refreshToken)
 
-	res, resErr := requests.POST(constants.ExchangeURL, encodedAuth, strings.NewReader(data.Encode()))
+	res, resErr := authClient.request(requests.POST, constants.ExchangeURL, data.Encode())
 	if resErr != nil {
-		return Tokens{}, resErr
+		return Token{}, resErr
 	}
+
+	formattedResponse := new(Token)
+
 	defer res.Body.Close()
+	requests.FormatResponse(res.Body, formattedResponse)
 
-	var tokens Tokens
-	jsonDecoder := json.NewDecoder(res.Body)
-	jsonErr := jsonDecoder.Decode(&tokens)
-	if jsonErr != nil {
-		jsonErr = errors.New("Decoding JSON error")
-		return Tokens{}, jsonErr
-	}
+	formattedResponse.AccessExpiry = time.Now().Add(time.Duration(formattedResponse.ExpiresIn) * time.Second)
+	formattedResponse.RefreshExpiry = time.Now().AddDate(0, 0, 60)
 
-	tokens.AccessExpiry = time.Now().Add(time.Duration(tokens.ExpiresIn) * time.Second)
-
-	return tokens, nil
+	return *formattedResponse, nil
 }
 
 // TokenIsExpired checks if a token is expired by passing in the token expiry time.
 func TokenIsExpired(expiration time.Time) bool {
 	return time.Now().After(expiration)
+}
+
+func (authClient *AuthClient) request(method string, path string, data string) (http.Response, error) {
+	authString := authClient.ClientID + ":" + authClient.ClientSecret
+	authorization := "Basic " + base64.StdEncoding.EncodeToString([]byte(authString))
+
+	return requests.Request(method, constants.ExchangeURL, authorization, strings.NewReader(data))
 }

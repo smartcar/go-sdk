@@ -1,16 +1,11 @@
 package smartcar
 
 import (
-	"bytes"
-	"encoding/json"
 	"errors"
-	"io/ioutil"
-	"log"
+	"io"
 	"net/http"
 	"net/url"
-	"strings"
 
-	"github.com/mitchellh/mapstructure"
 	"github.com/smartcar/go-sdk/helpers/constants"
 	"github.com/smartcar/go-sdk/helpers/requests"
 )
@@ -54,8 +49,8 @@ type VehicleResponse struct {
 	Status string `json:"status"`
 }
 
-// VehicleSetUnits takes a vehicle and sets the unit system that information for the vehicle will be returned in.
-func VehicleSetUnits(vehicle *Vehicle, unit string) error {
+// SetUnits takes a vehicle and sets the unit system that information for the vehicle will be returned in.
+func (vehicle *Vehicle) SetUnits(unit string) error {
 	if !(unit == "metric" || unit == "imperial") {
 		return errors.New("unit must either be metric or imperial")
 	}
@@ -63,261 +58,276 @@ func VehicleSetUnits(vehicle *Vehicle, unit string) error {
 	return nil
 }
 
-// vehicleAPIRequest is an internal functions used to make requests to Smartcar's vehicle API.
-func vehicleAPIRequest(vehicle Vehicle, endpoint string, httpType string, action string) (map[string]interface{}, error) {
-	requestPath := constants.VehiclePath + vehicle.ID + endpoint
-	vehicleURL := url.URL{
+// Request is an internal functions used to make requests to Smartcar's vehicle API.
+func (vehicle *Vehicle) request(path string, method string, data io.Reader) (http.Response, error) {
+	// Build url
+	requestPath := constants.VehiclePath + vehicle.ID + path
+	url := url.URL{
 		Scheme: constants.APIScheme,
 		Host:   constants.APIHost,
 		Path:   requestPath,
 	}
-
 	authorization := "Bearer " + vehicle.AccessToken
 
-	var res *http.Response
+	// Send request
+	return requests.Request(method, url.String(), authorization, data)
+}
 
-	if httpType == "POST" {
-		jsonRequest := map[string]interface{}{
-			"action": action,
-		}
-
-		request, err := json.Marshal(jsonRequest)
-		if err != nil {
-			return nil, err
-		}
-
-		var resErr error
-		res, resErr = requests.POST(vehicleURL.String(), authorization, bytes.NewBuffer(request))
-		if resErr != nil {
-			return nil, resErr
-		}
-	} else if httpType == "DELETE" {
-		var resErr error
-		res, resErr = requests.DELETE(vehicleURL.String(), authorization)
-		if resErr != nil {
-			return nil, resErr
-		}
-	} else {
-		var resErr error
-		res, resErr = requests.GET(vehicleURL.String(), authorization)
-		if resErr != nil {
-			return nil, resErr
-		}
+// Info uses a Vehicle and returns vehicle information from Smartcar in a VehicleInfoResponse.
+func (vehicle *Vehicle) Info() VehicleInfoResponse {
+	res, err := vehicle.request("/", requests.GET, nil)
+	if err != nil {
+		return VehicleInfoResponse{}
 	}
+
+	formattedResponse := new(VehicleInfoResponse)
 
 	defer res.Body.Close()
-	body, readErr := ioutil.ReadAll(res.Body)
-	if readErr != nil {
-		log.Fatal(readErr)
-	}
-	if res.StatusCode != 200 {
-		var err Error
-		jsonErr := json.Unmarshal(body, &err)
-		if jsonErr != nil {
-			jsonErr = errors.New("Decoding JSON error")
-			return nil, jsonErr
-		}
-		return nil, &Error{err.Name, err.Message, err.Code}
-	}
+	requests.FormatResponse(res.Body, formattedResponse)
 
-	jsonResponse := make(map[string]interface{})
-	jsonErr := json.Unmarshal(body, &jsonResponse)
-	if jsonErr != nil {
-		jsonErr = errors.New("Decoding JSON error")
-		return nil, jsonErr
-	}
-
-	return jsonResponse, nil
+	return *formattedResponse
 }
 
-// VehicleInfo uses a Vehicle and returns vehicle information from Smartcar in a VehicleInfoResponse.
-func VehicleInfo(vehicle Vehicle) (VehicleInfoResponse, error) {
-	response, err := vehicleAPIRequest(vehicle, "", "GET", "")
+// VIN uses a Vehicle and returns the vehicle's VIN from Smartcar in a string.
+func (vehicle *Vehicle) VIN() string {
+	res, err := vehicle.request("/vin", requests.GET, nil)
 	if err != nil {
-		return VehicleInfoResponse{}, err
+		return ""
 	}
 
-	var vehicleInfo VehicleInfoResponse
-	err = mapstructure.Decode(response, &vehicleInfo)
-	if err != nil {
-		return VehicleInfoResponse{}, err
+	type vinResponse struct {
+		Vin string
 	}
+	formattedResponse := new(vinResponse)
 
-	return vehicleInfo, nil
+	defer res.Body.Close()
+	requests.FormatResponse(res.Body, formattedResponse)
+
+	return formattedResponse.Vin
 }
 
-// VehicleVIN uses a Vehicle and returns the vehicle's VIN from Smartcar in a string.
-func VehicleVIN(vehicle Vehicle) (string, error) {
-	response, err := vehicleAPIRequest(vehicle, "/vin", "GET", "")
+// Odometer uses a Vehicle and returns the vehicle's odometer reading from Smartcar in a float64.
+func (vehicle *Vehicle) Odometer() float64 {
+	res, err := vehicle.request("/odometer", requests.GET, nil)
 	if err != nil {
-		return "", err
+		return -1
 	}
 
-	return response["vin"].(string), nil
+	type odometerResponse struct {
+		Distance float64
+	}
+	formattedResponse := new(odometerResponse)
+
+	defer res.Body.Close()
+	requests.FormatResponse(res.Body, formattedResponse)
+
+	return formattedResponse.Distance
 }
 
-// VehicleOdometer uses a Vehicle and returns the vehicle's odometer reading from Smartcar in a float64.
-func VehicleOdometer(vehicle Vehicle) (float64, error) {
-	response, err := vehicleAPIRequest(vehicle, "/odometer", "GET", "")
-	if err != nil {
-		return 0, err
-	}
+// // VehicleLocation uses a Vehicle and returns the vehicle's location from Smartcar in a VehicleLocationResponse.
+// func (vehicle Vehicle) Location() (VehicleLocationResponse, error) {
+// 	response, err := vehicle.request("/location", requests.GET, "")
+// 	if err != nil {
+// 		return VehicleLocationResponse{}, err
+// 	}
 
-	return response["distance"].(float64), nil
-}
+// 	var vehicleLocation VehicleLocationResponse
+// 	err = mapstructure.Decode(response, &vehicleLocation)
+// 	if err != nil {
+// 		return VehicleLocationResponse{}, err
+// 	}
 
-// VehicleLocation uses a Vehicle and returns the vehicle's location from Smartcar in a VehicleLocationResponse.
-func VehicleLocation(vehicle Vehicle) (VehicleLocationResponse, error) {
-	response, err := vehicleAPIRequest(vehicle, "/location", "GET", "")
-	if err != nil {
-		return VehicleLocationResponse{}, err
-	}
+// 	return vehicleLocation, nil
+// }
 
-	var vehicleLocation VehicleLocationResponse
-	err = mapstructure.Decode(response, &vehicleLocation)
-	if err != nil {
-		return VehicleLocationResponse{}, err
-	}
+// // VehicleFuel uses a Vehicle and returns the vehicle's fuel level from Smartcar in a VehicleFuelEVResponse.
+// func (vehicle Vehicle) Fuel() (VehicleFuelEVResponse, error) {
+// 	response, err := vehicle.request("/fuel", requests.GET, "")
+// 	if err != nil {
+// 		return VehicleFuelEVResponse{}, err
+// 	}
 
-	return vehicleLocation, nil
-}
+// 	var vehicleFuel VehicleFuelEVResponse
+// 	err = mapstructure.Decode(response, &vehicleFuel)
+// 	if err != nil {
+// 		return VehicleFuelEVResponse{}, err
+// 	}
 
-// VehicleFuel uses a Vehicle and returns the vehicle's fuel level from Smartcar in a VehicleFuelEVResponse.
-func VehicleFuel(vehicle Vehicle) (VehicleFuelEVResponse, error) {
-	response, err := vehicleAPIRequest(vehicle, "/fuel", "GET", "")
-	if err != nil {
-		return VehicleFuelEVResponse{}, err
-	}
+// 	return vehicleFuel, nil
+// }
 
-	var vehicleFuel VehicleFuelEVResponse
-	err = mapstructure.Decode(response, &vehicleFuel)
-	if err != nil {
-		return VehicleFuelEVResponse{}, err
-	}
+// // VehicleBattery uses a Vehicle and returns the vehicle's battery level from Smartcar in a VehicleFuelEVResponse.
+// func (vehicle Vehicle) Battery() (VehicleFuelEVResponse, error) {
+// 	response, err := vehicle.request("/battery", requests.GET, "")
+// 	if err != nil {
+// 		return VehicleFuelEVResponse{}, err
+// 	}
 
-	return vehicleFuel, nil
-}
+// 	var vehicleBattery VehicleFuelEVResponse
+// 	err = mapstructure.Decode(response, &vehicleBattery)
+// 	if err != nil {
+// 		return VehicleFuelEVResponse{}, err
+// 	}
 
-// VehicleBattery uses a Vehicle and returns the vehicle's battery level from Smartcar in a VehicleFuelEVResponse.
-func VehicleBattery(vehicle Vehicle) (VehicleFuelEVResponse, error) {
-	response, err := vehicleAPIRequest(vehicle, "/battery", "GET", "")
-	if err != nil {
-		return VehicleFuelEVResponse{}, err
-	}
+// 	return vehicleBattery, nil
+// }
 
-	var vehicleBattery VehicleFuelEVResponse
-	err = mapstructure.Decode(response, &vehicleBattery)
-	if err != nil {
-		return VehicleFuelEVResponse{}, err
-	}
+// // VehicleCharge uses a Vehicle and returns the vehicle's charging status from Smartcar in a VehicleChargeResponse.
+// func (vehicle Vehicle) Charge() (VehicleChargeResponse, error) {
+// 	response, err := vehicle.request("/charge", requests.GET, "")
+// 	if err != nil {
+// 		return VehicleChargeResponse{}, err
+// 	}
 
-	return vehicleBattery, nil
-}
+// 	var vehicleCharge VehicleChargeResponse
+// 	err = mapstructure.Decode(response, &vehicleCharge)
+// 	if err != nil {
+// 		return VehicleChargeResponse{}, err
+// 	}
 
-// VehicleCharge uses a Vehicle and returns the vehicle's charging status from Smartcar in a VehicleChargeResponse.
-func VehicleCharge(vehicle Vehicle) (VehicleChargeResponse, error) {
-	response, err := vehicleAPIRequest(vehicle, "/charge", "GET", "")
-	if err != nil {
-		return VehicleChargeResponse{}, err
-	}
+// 	return vehicleCharge, nil
+// }
 
-	var vehicleCharge VehicleChargeResponse
-	err = mapstructure.Decode(response, &vehicleCharge)
-	if err != nil {
-		return VehicleChargeResponse{}, err
-	}
+// // VehiclePermissions uses a Vehicle and returns the vehicle's authorized permissions in a []string.
+// func (vehicle Vehicle) Permissions() ([]string, error) {
+// 	response, err := vehicle.request("/permissions", requests.GET, "")
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-	return vehicleCharge, nil
-}
+// 	var permissions []string
+// 	err = mapstructure.Decode(response["permissions"], &permissions)
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-// VehiclePermissions uses a Vehicle and returns the vehicle's authorized permissions in a []string.
-func VehiclePermissions(vehicle Vehicle) ([]string, error) {
-	response, err := vehicleAPIRequest(vehicle, "/permissions", "GET", "")
-	if err != nil {
-		return nil, err
-	}
+// 	return permissions, nil
+// }
 
-	var permissions []string
-	err = mapstructure.Decode(response["permissions"], &permissions)
-	if err != nil {
-		return nil, err
-	}
+// // VehicleHasPermissions uses a Vehicle and a slice of permissions and returns whether the vehicle has the specified permissions.
+// func (vehicle Vehicle) HasPermissions(permissions ...string) (bool, error) {
+// 	vehiclePermissions, err := vehicle.Permissions()
+// 	if err != nil {
+// 		return false, err
+// 	}
 
-	return permissions, nil
-}
+// 	set := make(map[string]bool)
+// 	for _, value := range vehiclePermissions {
+// 		value = strings.TrimPrefix(value, "required:")
+// 		set[value] = true
+// 	}
 
-// VehicleHasPermissions uses a Vehicle and a slice of permissions and returns whether the vehicle has the specified permissions.
-func VehicleHasPermissions(vehicle Vehicle, permissions []string) (bool, error) {
-	vehiclePermissions, err := VehiclePermissions(vehicle)
-	if err != nil {
-		return false, err
-	}
+// 	for _, value := range permissions {
+// 		value = strings.TrimPrefix(value, "required:")
+// 		if hasPermission, found := set[value]; !found {
+// 			return false, nil
+// 		} else if !hasPermission {
+// 			return false, nil
+// 		}
+// 	}
 
-	set := make(map[string]bool)
-	for _, value := range vehiclePermissions {
-		value = strings.TrimPrefix(value, "required:")
-		set[value] = true
-	}
+// 	return true, nil
+// }
 
-	for _, value := range permissions {
-		value = strings.TrimPrefix(value, "required:")
-		if hasPermission, found := set[value]; !found {
-			return false, nil
-		} else if !hasPermission {
-			return false, nil
-		}
-	}
+// // VehicleLock uses a Vehicle to send a vehicle lock request to Smartcar.
+// // It returns whether the request was successful in a VehicleResponse.
+// func (vehicle Vehicle) Lock() (VehicleResponse, error) {
+// 	response, err := vehicle.request("/security", "POST", "LOCK")
+// 	if err != nil {
+// 		return VehicleResponse{}, err
+// 	}
 
-	return true, nil
-}
+// 	var vehicleLockResponse VehicleResponse
+// 	err = mapstructure.Decode(response, &vehicleLockResponse)
+// 	if err != nil {
+// 		return VehicleResponse{}, err
+// 	}
 
-// VehicleLock uses a Vehicle to send a vehicle lock request to Smartcar.
-// It returns whether the request was successful in a VehicleResponse.
-func VehicleLock(vehicle Vehicle) (VehicleResponse, error) {
-	response, err := vehicleAPIRequest(vehicle, "/security", "POST", "LOCK")
-	if err != nil {
-		return VehicleResponse{}, err
-	}
+// 	return vehicleLockResponse, nil
+// }
 
-	var vehicleLockResponse VehicleResponse
-	err = mapstructure.Decode(response, &vehicleLockResponse)
-	if err != nil {
-		return VehicleResponse{}, err
-	}
+// // VehicleUnlock uses a Vehicle to send a vehicle unlock request to Smartcar.
+// // It returns whether the request was successful in a VehicleResponse.
+// func (vehicle Vehicle) Unlock() (VehicleResponse, error) {
+// 	response, err := vehicle.request("/security", "POST", "UNLOCK")
+// 	if err != nil {
+// 		return VehicleResponse{}, err
+// 	}
 
-	return vehicleLockResponse, nil
-}
+// 	var vehicleUnlockResponse VehicleResponse
+// 	err = mapstructure.Decode(response, &vehicleUnlockResponse)
+// 	if err != nil {
+// 		return VehicleResponse{}, err
+// 	}
 
-// VehicleUnlock uses a Vehicle to send a vehicle unlock request to Smartcar.
-// It returns whether the request was successful in a VehicleResponse.
-func VehicleUnlock(vehicle Vehicle) (VehicleResponse, error) {
-	response, err := vehicleAPIRequest(vehicle, "/security", "POST", "UNLOCK")
-	if err != nil {
-		return VehicleResponse{}, err
-	}
+// 	return vehicleUnlockResponse, nil
+// }
 
-	var vehicleUnlockResponse VehicleResponse
-	err = mapstructure.Decode(response, &vehicleUnlockResponse)
-	if err != nil {
-		return VehicleResponse{}, err
-	}
+// // VehicleDisconnect uses a Vehicle to disconnect it from the application.
+// // It returns whether the disconnect was successful in a VehicleResponse.
+// func (vehicle Vehicle) Disconnect() (VehicleResponse, error) {
+// 	response, err := vehicle.request("/application", "DELETE", "")
+// 	if err != nil {
+// 		return VehicleResponse{}, err
+// 	}
 
-	return vehicleUnlockResponse, nil
-}
+// 	var vehicleDisconnectResponse VehicleResponse
+// 	err = mapstructure.Decode(response, &vehicleDisconnectResponse)
+// 	if err != nil {
+// 		return VehicleResponse{}, err
+// 	}
 
-// VehicleDisconnect uses a Vehicle to disconnect it from the application.
-// It returns whether the disconnect was successful in a VehicleResponse.
-func VehicleDisconnect(vehicle Vehicle) (VehicleResponse, error) {
-	response, err := vehicleAPIRequest(vehicle, "/application", "DELETE", "")
-	if err != nil {
-		return VehicleResponse{}, err
-	}
+// 	return vehicleDisconnectResponse, nil
+// }
 
-	var vehicleDisconnectResponse VehicleResponse
-	err = mapstructure.Decode(response, &vehicleDisconnectResponse)
-	if err != nil {
-		return VehicleResponse{}, err
-	}
+// // VehicleIsCompatible checks compatibility for a vehicle VIN with Smartcar for the provided scopes.
+// // It takes a VIN and authClient credentials and will return a bool indicating compatibility.
+// func (authClient AuthClient) IsCompatible(vin string) (bool, error) {
+// 	type CompatibleResponse struct {
+// 		Compatible bool `json:"compatible"`
+// 	}
 
-	return vehicleDisconnectResponse, nil
-}
+// 	compatiblityURL := url.URL{
+// 		Scheme: constants.APIScheme,
+// 		Host:   constants.APIHost,
+// 		Path:   constants.CompatibilityPath,
+// 	}
+
+// 	query := compatiblityURL.Query()
+// 	query.Set("vin", vin)
+// 	query.Set("scope", strings.Join(authClient.Scope, " "))
+// 	compatiblityURL.RawQuery = query.Encode()
+
+// 	authString := authClient.ClientId + ":" + authClient.ClientSecret
+// 	encodedAuth := "Basic " + base64.StdEncoding.EncodeToString([]byte(authString))
+
+// 	res, resErr := requests.GET(compatiblityURL.String(), encodedAuth)
+// 	if resErr != nil {
+// 		return false, resErr
+// 	}
+// 	defer res.Body.Close()
+// 	jsonDecoder := json.NewDecoder(res.Body)
+
+// 	if res.StatusCode != 200 {
+// 		var err Error
+// 		// TODO:
+// 		// Put the next lines in a handler, there is repetition of code.
+// 		jsonErr := jsonDecoder.Decode(&err)
+// 		if jsonErr != nil {
+// 			jsonErr = errors.New("Decoding JSON error")
+// 			return false, jsonErr
+// 		}
+// 		return false, &Error{err.Name, err.Message, err.Code}
+// 	}
+
+// 	var compatibleResponse CompatibleResponse
+// 	// TODO:
+// 	// Repetition of code, use handler.
+// 	jsonErr := jsonDecoder.Decode(&compatibleResponse)
+// 	if jsonErr != nil {
+// 		jsonErr = errors.New("Decoding JSON error")
+// 		return false, jsonErr
+// 	}
+
+// 	return compatibleResponse.Compatible, nil
+// }
