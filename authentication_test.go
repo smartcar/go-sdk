@@ -288,7 +288,7 @@ func (suite *AuthenticationTestSuite) TestRefreshToken() {
 	test.MockRequest(requests.POST, constants.ExchangeURL, authorization, 200, expectedResponse)
 
 	// Act
-	token, err := authClient.RefreshToken(refreshToken)
+	token, err := authClient.ExchangeRefreshToken(refreshToken)
 
 	// Assert
 	if err != nil {

@@ -1,5 +1,9 @@
+
+
 # Smartcar Go SDK
 [![GoDoc](http://img.shields.io/badge/godoc-reference-blue.svg)](http://godoc.org/github.com/smartcar/go-sdk)
+
+## WARNING: THIS SDK IS IN BETA, INTERFACE IS SUBJECT TO CHANGE
 
 ## Overview
 
@@ -30,7 +34,6 @@ authClient := smartcar.AuthClient{
 2. Get a connect URL and redirect user to that URL. 
 ```go
 authURL, err := authClient.GetAuthURL(smartcar.AuthURLOptions{
-	Auth:     auth,
 	ForceApproval: false,
 	State:  "",
 	MakeBypass:   smartcar.MakeBypass{},
@@ -39,9 +42,13 @@ authURL, err := authClient.GetAuthURL(smartcar.AuthURLOptions{
 ```
 3. Setup up redirectURI endpoint to receive authorization code. Exchange auth code for an authorization.
 ```go
-token, err := authClient.ExchangeCode(auth)
+// Exchange initial authorization code
+token, err := authClient.ExchangeCode(code)
+
+// Refresh for continued access
+token, err := authClient.ExchangeRefreshToken(token.Refresh)
 ```
-4. Get vehicle ids from access token
+4. Get vehicle ids using access token
 ```go
 vehicleIds, err := smartcar.GetVehicleIds(token.Access)
 ```
@@ -51,5 +58,17 @@ vehicle := smartcar.Vehicle{ID: vehicleIds[0], AccessToken: token.Access}
 ```
 6. Send request to vehicle
 ```go
-vehicleInfo, err := vehicle.Info()
+// Vehicle Endpoints
+vehicleResponse, err := vehicle.Info()
+vehicleResponse, err := vehicle.VIN()
+vehicleResponse, err := vehicle.Odometer()
+vehicleResponse, err := vehicle.Lock()
+vehicleResponse, err := vehicle.Unlock()
+vehicleResponse, err := vehicle.Location()
+vehicleResponse, err := vehicle.Fuel()
+vehicleResponse, err := vehicle.Battery()
+vehicleResponse, err := vehicle.Charge()
+vehicleResponse, err := vehicle.Permissions()
+vehicleResponse, err := vehicle.HasPermissions()
+vehicleResponse, err := vehicle.Disconnect()
 ```

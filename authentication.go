@@ -55,7 +55,6 @@ type Token struct {
 type AuthURLOptions struct {
 	ForceApproval bool
 	State         string
-	TestMode      bool
 	MakeBypass
 	SingleSelect
 }
@@ -140,8 +139,8 @@ func (authClient *AuthClient) ExchangeCode(authCode string) (Token, error) {
 	return *formattedResponse, nil
 }
 
-// RefreshToken uses a basic AuthClient containing your client ID and a refresh token to return new access tokens.
-func (authClient *AuthClient) RefreshToken(refreshToken string) (Token, error) {
+// ExchangeRefreshToken uses a basic AuthClient containing your client ID and a refresh token to return new access tokens.
+func (authClient *AuthClient) ExchangeRefreshToken(refreshToken string) (Token, error) {
 
 	data := url.Values{}
 	data.Set("grant_type", "refresh_token")
