@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
@@ -28,8 +29,8 @@ type MakeBypass struct {
 // SingleSelect will only authorize vehicles that match the given properties.
 // Smartcar Pro feature.
 type SingleSelect struct {
-	Single bool
-	Vin    string
+	Enabled bool
+	Vin     string
 }
 
 // AuthClient is used to store your auth credentials when authenticating with Smartcar.
@@ -103,10 +104,12 @@ func (authClient *AuthClient) GetAuthURL(options AuthURLOptions) (string, error)
 	}
 
 	if singleSelect != (SingleSelect{}) {
+		singleSelectEnabled := singleSelect.Enabled
 		if singleSelect.Vin != "" {
 			query.Set("single_select_vin", singleSelect.Vin)
+			singleSelectEnabled = true
 		}
-		query.Set("single_select", "true")
+		query.Set("single_select", strconv.FormatBool(singleSelectEnabled))
 	}
 
 	connectURL.RawQuery = query.Encode()

@@ -229,7 +229,7 @@ func (suite *AuthenticationTestSuite) TestGetAuthURLSingleSelectEmpty() {
 	clientID := "clientId"
 	redirectURI := "redirectUri"
 	authClient := AuthClient{ClientID: clientID, RedirectURI: redirectURI}
-	singleSelect := SingleSelect{Single: true}
+	singleSelect := SingleSelect{Enabled: true}
 	authURLOptions := AuthURLOptions{SingleSelect: singleSelect}
 	expectedURL := fmt.Sprintf(
 		"https://connect.smartcar.com/oauth/authorize?approval_prompt=auto&client_id=%s&redirect_uri=%s&response_type=code&single_select=true",
