@@ -14,7 +14,6 @@ import (
 )
 
 /*
-
 The following 2 are Pro features:
 	- MakeByPass
 	- Single Select

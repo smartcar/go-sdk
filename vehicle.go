@@ -26,31 +26,6 @@ type VehicleInfoResponse struct {
 	Year  int    `json:"year"`
 }
 
-// VehicleLocationResponse contains the vehicle location response returned from the VehicleLocation function.
-type VehicleLocationResponse struct {
-	Latitude  float64 `json:"latitude"`
-	Longitude float64 `json:"longitude"`
-}
-
-// VehicleFuelResponse contains the vehicle FuelEV response returned from the VehicleFuel and VehicleBattery functions.
-type VehicleFuelResponse struct {
-	AmountRemaining  float64 `json:"amountRemaining"`
-	PercentRemaining float64 `json:"percentRemaining"`
-	Range            float64 `json:"range"`
-}
-
-// VehicleBatteryResponse contains the vehicle battery res
-type VehicleBatteryResponse struct {
-	PercentRemaining float64 `json:"percentRemaining"`
-	Range            float64 `json:"range"`
-}
-
-// VehicleChargeResponse contains the vehicle charging state response returned from the VehicleCharge function.
-type VehicleChargeResponse struct {
-	IsPluggedIn bool   `json:"isPluggedIn"`
-	State       string `json:"state"`
-}
-
 // VehicleResponse contains a general vehicle status response returned from the VehicleLock, VehicleUnlock and VehicleDisconnect functions.
 type VehicleResponse struct {
 	Status string `json:"status"`
@@ -99,23 +74,6 @@ func (vehicle *Vehicle) VIN() (string, error) {
 	return formattedResponse.Vin, nil
 }
 
-// Odometer sends request to Smartcar API vehicle/odometer endpoint and returns formatted response.
-func (vehicle *Vehicle) Odometer() (float64, error) {
-	res, resErr := vehicle.request("/odometer", requests.GET, nil)
-	if resErr != nil {
-		return 0, resErr
-	}
-
-	formattedResponse := new(struct{ Distance float64 })
-	defer res.Body.Close()
-	fmtErr := requests.FormatResponse(res.Body, formattedResponse)
-	if fmtErr != nil {
-		return 0, fmtErr
-	}
-
-	return formattedResponse.Distance, nil
-}
-
 // Lock sends request to Smartcar API vehicle/odometer endpoint and returns formatted response.
 func (vehicle *Vehicle) Lock() (VehicleResponse, error) {
 	return vehicle.security("LOCK")
@@ -147,73 +105,6 @@ func (vehicle *Vehicle) security(action string) (VehicleResponse, error) {
 	fmtErr := requests.FormatResponse(res.Body, formattedResponse)
 	if fmtErr != nil {
 		return VehicleResponse{}, fmtErr
-	}
-
-	return *formattedResponse, nil
-}
-
-// Location sends request to Smartcar API vehicle/location endpoint and returns formatted response.
-func (vehicle *Vehicle) Location() (VehicleLocationResponse, error) {
-	res, err := vehicle.request("/location", requests.GET, nil)
-	if err != nil {
-		return VehicleLocationResponse{}, err
-	}
-	formattedResponse := new(VehicleLocationResponse)
-	defer res.Body.Close()
-	fmtErr := requests.FormatResponse(res.Body, formattedResponse)
-	if fmtErr != nil {
-		return VehicleLocationResponse{}, fmtErr
-	}
-
-	return *formattedResponse, nil
-}
-
-// Fuel sends request to Smartcar API vehicle/fuel endpoint and returns formatted response.
-func (vehicle *Vehicle) Fuel() (VehicleFuelResponse, error) {
-	res, err := vehicle.request("/fuel", requests.GET, nil)
-	if err != nil {
-		return VehicleFuelResponse{}, err
-	}
-
-	formattedResponse := new(VehicleFuelResponse)
-	defer res.Body.Close()
-	fmtErr := requests.FormatResponse(res.Body, formattedResponse)
-	if fmtErr != nil {
-		return VehicleFuelResponse{}, fmtErr
-	}
-
-	return *formattedResponse, nil
-}
-
-// Battery sends request to Smartcar API vehicle/battery endpoint and returns formatted response.
-func (vehicle *Vehicle) Battery() (VehicleBatteryResponse, error) {
-	res, err := vehicle.request("/battery", requests.GET, nil)
-	if err != nil {
-		return VehicleBatteryResponse{}, err
-	}
-
-	formattedResponse := new(VehicleBatteryResponse)
-	defer res.Body.Close()
-	fmtErr := requests.FormatResponse(res.Body, formattedResponse)
-	if fmtErr != nil {
-		return VehicleBatteryResponse{}, fmtErr
-	}
-
-	return *formattedResponse, nil
-}
-
-// Charge sends request to Smartcar API vehicle/charge endpoint and returns formatted response.
-func (vehicle *Vehicle) Charge() (VehicleChargeResponse, error) {
-	res, err := vehicle.request("/charge", requests.GET, nil)
-	if err != nil {
-		return VehicleChargeResponse{}, err
-	}
-
-	formattedResponse := new(VehicleChargeResponse)
-	defer res.Body.Close()
-	fmtErr := requests.FormatResponse(res.Body, formattedResponse)
-	if fmtErr != nil {
-		return VehicleChargeResponse{}, fmtErr
 	}
 
 	return *formattedResponse, nil
@@ -258,23 +149,6 @@ func (vehicle *Vehicle) HasPermissions(permissions ...string) (bool, error) {
 	}
 
 	return true, nil
-}
-
-// Disconnect sends request to Smartcar API vehicle/application endpoint and returns formatted response.
-func (vehicle *Vehicle) Disconnect() (VehicleResponse, error) {
-	res, err := vehicle.request("/application", requests.DELETE, nil)
-	if err != nil {
-		return VehicleResponse{}, err
-	}
-
-	formattedResponse := new(VehicleResponse)
-	defer res.Body.Close()
-	fmtErr := requests.FormatResponse(res.Body, formattedResponse)
-	if fmtErr != nil {
-		return VehicleResponse{}, fmtErr
-	}
-
-	return *formattedResponse, nil
 }
 
 // request is an internal functions used to make requests to Smartcar's vehicle API.

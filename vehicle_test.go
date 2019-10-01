@@ -132,26 +132,6 @@ func (suite *VehicleTestSuite) TestVIN() {
 	assert.Equal(suite.T(), res, expectedResponse)
 }
 
-func (suite *VehicleTestSuite) TestOdometer() {
-	// Arrange
-	distance := 1000.0
-	expectedResponse := distance
-	mockResponse := map[string]interface{}{
-		"distance": distance,
-	}
-	url := utils.BuildVehicleURL("/odometer", suite.vehicleID)
-	test.MockRequest(requests.GET, url, suite.authorization, 200, mockResponse)
-
-	// Act
-	res, err := suite.vehicle.Odometer()
-
-	// Assert
-	if err != nil {
-		suite.T().Error(err)
-	}
-	assert.Equal(suite.T(), res, expectedResponse)
-}
-
 func (suite *VehicleTestSuite) TestLock() {
 	// Arrange
 	status := "success"
