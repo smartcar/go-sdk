@@ -4,8 +4,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
+	"runtime"
+	"runtime/debug"
 	"time"
 )
 
@@ -21,6 +24,20 @@ const (
 	RequestTimeout = time.Duration(5) * time.Minute
 )
 
+// getUserAgent returns the formatted user agent to send to smartcar api
+func getUserAgent() string {
+	if bi, ok := debug.ReadBuildInfo(); ok {
+		return fmt.Sprintf(
+			"Smartcar/%s (%s; %s) Go %s",
+			bi.Main.Version,
+			runtime.GOOS,
+			runtime.GOARCH,
+			runtime.Version(),
+		)
+	}
+	return fmt.Sprintf("Smartcar/unknown (;) Go %s", runtime.Version())
+}
+
 // Request builds a request and calls execute to send request
 func Request(method, url, authorization, unitSystem string, body io.Reader) (http.Response, error) {
 
@@ -33,6 +50,7 @@ func Request(method, url, authorization, unitSystem string, body io.Reader) (htt
 	// Add Headers
 	addHeader := addHeader(req)
 	addHeader("Authorization", authorization)
+	addHeader("User-Agent", getUserAgent())
 	if body != nil {
 		addHeader("Content-Type", getBodyType(body))
 	}
