@@ -2,6 +2,7 @@ package requests
 
 import (
 	"io/ioutil"
+	"regexp"
 	"testing"
 
 	"github.com/smartcar/go-sdk/helpers/test"
@@ -21,19 +22,23 @@ func (suite *RequestsSuiteTest) AfterTest() {
 func (suite *RequestsSuiteTest) TestRequest() {
 	// Arrange
 	expectedURL := "http://example.com"
-	expectedMethod := "GET"
-	accessToken := "access-token"
+	expectedMethod := GET
+	authorization := "authorization"
 	expectedBody := "Body"
+	// This needs to be converted to regex expression because if not
+	// MatchHeader does not work.
+	expectedUserAgent := regexp.QuoteMeta(getUserAgent())
 	gock.New(expectedURL).
-		MatchHeader("Authorization", "Bearer "+accessToken).
+		MatchHeader("Authorization", authorization).
+		MatchHeader("User-Agent", expectedUserAgent).
 		Get("/").
 		Reply(200).
 		BodyString(expectedBody)
 
 	// Act
-	res, err := Request(expectedMethod, expectedURL, accessToken, "", nil)
+	res, err := Request(expectedMethod, expectedURL, authorization, "", nil)
 	if err != nil {
-		suite.T().Error("Expected", err)
+		suite.T().Error("Should not be called")
 	}
 	defer res.Body.Close()
 	body, err := ioutil.ReadAll(res.Body)
@@ -47,27 +52,24 @@ func (suite *RequestsSuiteTest) TestRequest() {
 
 func (suite *RequestsSuiteTest) TestRequestFail() {
 	// Arrange
-	expectedURL := ""
-	// expectedMethod := "GET"
-	accessToken := "access-token"
+	expectedURL := "http://example.com"
+	authorization := "authorization"
+	expectedUserAgent := regexp.QuoteMeta(getUserAgent())
 	gock.New(expectedURL).
-		MatchHeader("Authorization", "Bearer "+accessToken)
-		// Get("/").
-		// Reply(401)
+		MatchHeader("Authorization", authorization).
+		MatchHeader("User-Agent", expectedUserAgent).
+		Get("/").
+		Reply(401)
 
 	// Act
-	_, err := Request("", expectedURL, accessToken, "", nil)
-	if err != nil {
-		suite.T().Error("Expected", err)
-	}
-	// defer res.Body.Close()
-	// body, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		assert.Error(suite.T(), err, "err")
-	}
+	_, err := Request(GET, expectedURL, authorization, "", nil)
 
 	// Assert
-	// assert.Equal(t, expectedBody, string(body))
+	if err != nil {
+		assert.EqualError(suite.T(), err, "Unauthorized")
+	} else {
+		suite.T().Error("Should not be called")
+	}
 }
 
 func TestRequestsSuite(t *testing.T) {
