@@ -1,6 +1,16 @@
 language: go
 
 go:
-- "1.13"
+  - 1.12.x
+  - 1.13.x
 
-script: go test -v
+before_install:
+  - go get -t -v ./...
+  - travis_retry go get -u golang.org/x/lint/golint
+
+install:
+  - make
+  - make coverage
+
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
