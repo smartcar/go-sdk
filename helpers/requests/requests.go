@@ -8,7 +8,6 @@ import (
 	"io"
 	"net/http"
 	"runtime"
-	"runtime/debug"
 	"time"
 )
 
@@ -87,14 +86,22 @@ func getBodyType(body io.Reader) string {
 
 // getUserAgent returns the formatted user agent to send to smartcar api
 func getUserAgent() string {
-	if bi, ok := debug.ReadBuildInfo(); ok {
-		return fmt.Sprintf(
-			"Smartcar/%s (%s; %s) Go %s",
-			bi.Main.Version,
-			runtime.GOOS,
-			runtime.GOARCH,
-			runtime.Version(),
-		)
-	}
-	return fmt.Sprintf("Smartcar/unknown (;) Go %s", runtime.Version())
+	arch := runtime.GOARCH
+	os := runtime.GOOS
+	version := runtime.Version()
+
+	// NOTE:
+	// This is only supported after Go.12
+	// if debug.ReadBuildInfo != nil {
+	// 	if bi, ok := debug.ReadBuildInfo(); ok {
+	// 		return fmt.Sprintf(
+	// 			"Smartcar/%s (%s; %s) Go %s",
+	// 			bi.Main.Version,
+	// 			os,
+	// 			arch,
+	// 			version,
+	// 		)
+	// 	}
+	// }
+	return fmt.Sprintf("Smartcar/unknown (%s;%s) Go %s", os, arch, version)
 }
