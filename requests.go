@@ -95,7 +95,11 @@ func (c *backend) formatHeadersResponse(headers http.Header, target interface{})
 
 // newRequest builds a new http request.
 func (c *backend) newRequest(params backendClientParams) (*http.Request, error) {
-	req, err := http.NewRequestWithContext(params.ctx, params.method, params.url, params.body)
+	// Not supported in previous versions og go 1.13
+	// req, err := http.NewRequestWithContext(params.ctx, params.method, params.url, params.body)
+	req, err := http.NewRequest(params.method, params.url, params.body)
+	req = req.WithContext(params.ctx)
+
 	if err != nil {
 		return nil, errors.New("Error creating New Request")
 	}
