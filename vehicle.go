@@ -246,8 +246,8 @@ func (v *vehicle) request(ctx context.Context, path, method string, params reque
 	return v.client.Call(backendClientParams{
 		ctx:           ctx,
 		method:        method,
-		url:           BuildVehicleURL(path, v.id),
-		authorization: BuildBearerAuthorization(v.accessToken),
+		url:           buildVehicleURL(path, v.id),
+		authorization: buildBearerAuthorization(v.accessToken),
 		requestParams: params,
 		body:          data,
 		target:        target,

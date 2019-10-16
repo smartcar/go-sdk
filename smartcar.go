@@ -67,7 +67,7 @@ func (c *client) GetUserID(ctx context.Context, params *UserIDParams) (*string, 
 	target := new(struct {
 		ID string
 	})
-	authorization := BuildBearerAuthorization(params.Access)
+	authorization := buildBearerAuthorization(params.Access)
 
 	return &target.ID, c.sC.Call(backendClientParams{
 		ctx:           ctx,
@@ -83,7 +83,7 @@ func (c *client) GetVehicleIDs(ctx context.Context, params *VehicleIDsParams) (*
 	target := new(struct {
 		VehicleIDs []string `json:"vehicles"`
 	})
-	authorization := BuildBearerAuthorization(params.Access)
+	authorization := buildBearerAuthorization(params.Access)
 
 	return &target.VehicleIDs, c.sC.Call(backendClientParams{
 		ctx:           ctx,
@@ -102,12 +102,12 @@ func (c *client) IsTokenExpired(params *TokenExpiredParams) bool {
 
 // IsVINCompatible checks if a VIN is compatible for a list scopes.
 func (c *client) IsVINCompatible(ctx context.Context, params *VINCompatibleParams) (bool, error) {
-	url := BuildCompatibilityURL(params.VIN, params.Scope)
+	url := buildCompatibilityURL(params.VIN, params.Scope)
 
 	isCompatible := new(struct {
 		Compatible bool
 	})
-	authorization := BuildBasicAuthorization(params.ClientID, params.ClientSecret)
+	authorization := buildBasicAuthorization(params.ClientID, params.ClientSecret)
 
 	return isCompatible.Compatible, c.sC.Call(backendClientParams{
 		ctx:           ctx,

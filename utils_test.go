@@ -16,7 +16,7 @@ func TestBuildBasicAuthorization(t *testing.T) {
 	expectedAuthorization := "Basic " + base64.StdEncoding.EncodeToString([]byte(authString))
 
 	// Act
-	authorization := BuildBasicAuthorization(clientID, clientSecret)
+	authorization := buildBasicAuthorization(clientID, clientSecret)
 
 	// Assert
 	assert.Equal(t, expectedAuthorization, authorization)
@@ -28,7 +28,7 @@ func TestBuildBearerAuthorization(t *testing.T) {
 	expectedAuthorization := fmt.Sprintf("Bearer %s", accessToken)
 
 	// Act
-	authorization := BuildBearerAuthorization(accessToken)
+	authorization := buildBearerAuthorization(accessToken)
 
 	// Assert
 	assert.Equal(t, expectedAuthorization, authorization)
@@ -39,7 +39,7 @@ func TestBuildCompatibilityURL(t *testing.T) {
 	expectedURL := "https://api.smartcar.com/v1.0/compatibility/?scope=scope&vin=vin"
 
 	// Act
-	url := BuildCompatibilityURL("vin", []string{"scope"})
+	url := buildCompatibilityURL("vin", []string{"scope"})
 
 	// Assert
 	assert.Equal(t, url, expectedURL)
@@ -52,7 +52,7 @@ func TestBuildVehicleURL(t *testing.T) {
 	expectedURL := vehicleURL + ID + path
 
 	// Act
-	url := BuildVehicleURL(path, ID)
+	url := buildVehicleURL(path, ID)
 
 	// Assert
 	assert.Equal(t, expectedURL, url)
