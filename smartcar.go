@@ -4,61 +4,198 @@
 package smartcar
 
 import (
+	"context"
+	"net/http"
+	"strings"
 	"time"
-
-	"github.com/smartcar/go-sdk/helpers/requests"
-	"github.com/smartcar/go-sdk/helpers/utils"
 )
 
-// GetUserID returns the user ID of the vehicle owner associated with the accessToken.
-func GetUserID(accessToken string) (string, error) {
+const (
+	apiURL           = "https://api.smartcar.com/v1.0/"
+	userURL          = "https://api.smartcar.com/v1.0/user/"
+	vehicleURL       = "https://api.smartcar.com/v1.0/vehicles/"
+	compatibilityURL = "https://api.smartcar.com/v1.0/compatibility/"
+	exchangeURL      = "https://auth.smartcar.com/oauth/token/"
+)
 
-	authorization := utils.BuildBearerAuthorization(accessToken)
-	userURL := utils.GetUserURL()
+// UserIDParams is a param in client.GetUserID
+type UserIDParams struct {
+	Access string
+}
 
-	res, resErr := requests.Request(requests.GET, userURL, authorization, "", nil)
-	if resErr != nil {
-		return "", resErr
-	}
+// VehicleIDsParams is a param in client.GetVehicleIDs
+type VehicleIDsParams struct {
+	Access string
+}
 
-	formattedResponse := new(struct {
-		ID string `json:"id"`
+// TokenExpiredParams is a param in client.IsTokenExpired
+type TokenExpiredParams struct {
+	Expiry time.Time
+}
+
+// VehicleParams is a param in client.NewVehicle
+type VehicleParams struct {
+	ID          string
+	AccessToken string
+	UnitSystem  UnitSystem
+}
+
+// AuthParams is a param in client.NewAuth
+type AuthParams struct {
+	ClientID     string
+	ClientSecret string
+	RedirectURI  string
+	Scope        []string
+	TestMode     bool
+}
+
+// VINCompatibleParams is a param in client.IsVINCompatible
+type VINCompatibleParams struct {
+	VIN          string
+	Scope        []string
+	ClientID     string
+	ClientSecret string
+}
+
+// PermissionsParams is a param in client.HasPermissions
+type PermissionsParams struct {
+	Permissions []string
+}
+
+// GetUserID returns the user ID of the vehicle owner associated with an Access token.
+func (c *client) GetUserID(ctx context.Context, params *UserIDParams) (*string, error) {
+	target := new(struct {
+		ID string
 	})
-	defer res.Body.Close()
-	err := requests.FormatResponse(res.Body, formattedResponse)
-	if err != nil {
-		return "", err
-	}
+	authorization := BuildBearerAuthorization(params.Access)
 
-	return formattedResponse.ID, nil
+	return &target.ID, c.sC.Call(backendClientParams{
+		ctx:           ctx,
+		method:        http.MethodGet,
+		url:           userURL,
+		authorization: authorization,
+		target:        target,
+	})
 }
 
-// GetVehicleIds returns IDs of the vehicles associated with the token.
-func GetVehicleIds(accessToken string) ([]string, error) {
-	type vehicleIDResponse struct {
-		UUIDs []string `json:"vehicles"`
-	}
+// GetVehicleIds returns IDs of the vehicles associated with an Access token.
+func (c *client) GetVehicleIDs(ctx context.Context, params *VehicleIDsParams) (*[]string, error) {
+	target := new(struct {
+		VehicleIDs []string `json:"vehicles"`
+	})
+	authorization := BuildBearerAuthorization(params.Access)
 
-	vehicleURL := utils.GetVehicleURL()
-	authorization := utils.BuildBearerAuthorization(accessToken)
-
-	res, resErr := requests.Request(requests.GET, vehicleURL, authorization, "", nil)
-	if resErr != nil {
-		return nil, resErr
-	}
-
-	formattedResponse := new(vehicleIDResponse)
-	defer res.Body.Close()
-	err := requests.FormatResponse(res.Body, &formattedResponse)
-	if err != nil {
-		return nil, err
-	}
-
-	return formattedResponse.UUIDs, nil
+	return &target.VehicleIDs, c.sC.Call(backendClientParams{
+		ctx:           ctx,
+		method:        http.MethodGet,
+		url:           vehicleURL,
+		authorization: authorization,
+		target:        target,
+	})
 }
 
-// TokenIsExpired checks if a token is expired by passing in the token expiry time.
-func TokenIsExpired(expiration time.Time) bool {
-	// Give 10 seconds of
-	return time.Now().After(expiration.Add(time.Second * 10))
+// IsTokenExpired checks if Expiry is expired.
+// Note: Does not call Smartcar's API nor makes an http.Request.
+func (c *client) IsTokenExpired(params *TokenExpiredParams) bool {
+	return time.Now().After(params.Expiry.Add(time.Second * 10))
+}
+
+// IsVINCompatible checks if a VIN is compatible for a list scopes.
+func (c *client) IsVINCompatible(ctx context.Context, params *VINCompatibleParams) (bool, error) {
+	url := BuildCompatibilityURL(params.VIN, params.Scope)
+
+	isCompatible := new(struct {
+		Compatible bool
+	})
+	authorization := BuildBasicAuthorization(params.ClientID, params.ClientSecret)
+
+	return isCompatible.Compatible, c.sC.Call(backendClientParams{
+		ctx:           ctx,
+		method:        http.MethodGet,
+		url:           url,
+		authorization: authorization,
+		target:        isCompatible,
+	})
+}
+
+// HasPermissions checks if the vehicle has the permissions passed in.
+func (c *client) HasPermissions(ctx context.Context, v Vehicle, params *PermissionsParams) (bool, error) {
+	vehiclePermissions, err := v.GetPermissions(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	set := make(map[string]bool)
+	for _, value := range vehiclePermissions.Permissions {
+		set[value] = true
+	}
+
+	for _, value := range params.Permissions {
+		value = strings.TrimPrefix(value, "required:")
+		if hasPermission, found := set[value]; !found {
+			return false, nil
+		} else if !hasPermission {
+			return false, nil
+		}
+	}
+
+	return true, nil
+}
+
+// NewVehicle creates an instance of Vehicle that allows you to call methods (i.e. GetInfo, GetOdometer, etc) on it and
+// send requests to Smartcar's API.
+func (c *client) NewVehicle(params *VehicleParams) Vehicle {
+	return &vehicle{
+		id:            params.ID,
+		accessToken:   params.AccessToken,
+		client:        c.sC,
+		requestParams: requestParams{UnitSystem: params.UnitSystem},
+	}
+}
+
+// NewAuthClient creates an instance of Auth that allows you to call methods that relate to authentication in Smartcar's API.
+func (c *client) NewAuth(params *AuthParams) Auth {
+	return &auth{
+		clientID:     params.ClientID,
+		clientSecret: params.ClientSecret,
+		redirectURI:  params.RedirectURI,
+		scope:        params.Scope,
+		testMode:     params.TestMode,
+		sC:           c.sC,
+	}
+}
+
+// Backend exposes methods needed for executing requests to Smartcar's API.
+type backendClient interface {
+	Call(backendClientParams) error
+}
+
+// backend is an internal helper struct that implements Backend.
+type backend struct{}
+
+// getBackend returns a newly created backend.
+func newBackend() backendClient {
+	return &backend{}
+}
+
+type client struct {
+	requestParams
+	sC backendClient
+}
+
+// Client exposes methods that allow you to interact with Smartcar's API that are not part of Vehicle or Auth.
+type Client interface {
+	GetUserID(context.Context, *UserIDParams) (*string, error)
+	GetVehicleIDs(context.Context, *VehicleIDsParams) (*[]string, error)
+	IsTokenExpired(*TokenExpiredParams) bool
+	IsVINCompatible(context.Context, *VINCompatibleParams) (bool, error)
+	HasPermissions(context.Context, Vehicle, *PermissionsParams) (bool, error)
+	NewAuth(*AuthParams) Auth
+	NewVehicle(*VehicleParams) Vehicle
+}
+
+// NewClient creates new SmartcarClient. This is the entry point for communicating with Smartcar's API.
+// Note: You cannot use any of the methods on this SDK if you don't call this method.
+func NewClient() Client {
+	return &client{sC: newBackend()}
 }
