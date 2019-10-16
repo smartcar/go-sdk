@@ -174,7 +174,7 @@ func (c *auth) ExchangeRefreshToken(ctx context.Context, params *ExchangeRefresh
 
 // request is an internal function for sending requests, accepts an interface to
 func (c *auth) request(ctx context.Context, method string, url string, data string, target interface{}) error {
-	authorization := BuildBasicAuthorization(c.clientID, c.clientSecret)
+	authorization := buildBasicAuthorization(c.clientID, c.clientSecret)
 
 	return c.sC.Call(backendClientParams{
 		ctx:           ctx,
