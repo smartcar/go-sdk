@@ -1,21 +1,21 @@
 package smartcar
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
 	"time"
+)
 
-	"github.com/smartcar/go-sdk/helpers/constants"
-	"github.com/smartcar/go-sdk/helpers/requests"
-	"github.com/smartcar/go-sdk/helpers/utils"
+const (
+	connectURL = "https://connect.smartcar.com/oauth/authorize"
 )
 
 /*
-
-The following 2 are Pro features:
+	The following 2 are Pro features:
 	- MakeByPass
 	- Single Select
 */
@@ -30,59 +30,77 @@ type MakeBypass struct {
 // Smartcar Pro feature.
 type SingleSelect struct {
 	Enabled bool
-	Vin     string
+	VIN     string
 }
 
-// AuthClient is used to store your auth credentials when authenticating with Smartcar.
-type AuthClient struct {
-	ClientID     string
-	ClientSecret string
-	RedirectURI  string
-	Scope        []string
-	TestMode     bool
-}
-
-// Token contains the tokens and their expiry that are returned from exchanging an authorization code.
+// Token is returned by auth.ExchangeCode and auth.ExchangeRefreshToken.
 type Token struct {
-	ExpiresIn     int    `json:"expires_in"`
-	Access        string `json:"access_token"`
-	AccessExpiry  time.Time
-	Refresh       string `json:"refresh_token"`
-	RefreshExpiry time.Time
+	Access        string    `json:"accessToken"`
+	AccessExpiry  time.Time `json:"accessExpiry"`
+	Refresh       string    `json:"refreshToken"`
+	RefreshExpiry time.Time `json:"refreshExpiry"`
+	ExpiresIn     int       `json:"expiresIn"`
 }
 
-// AuthURLOptions contains the AuthClient, Pro authorization features and all fields that can be used to construct an auth URL.
-type AuthURLOptions struct {
+// AuthURLParams contains the AuthClient, Pro authorization features and all fields that can be used to construct an auth URL.
+type AuthURLParams struct {
 	ForceApproval bool
 	State         string
 	MakeBypass
 	SingleSelect
 }
 
-// GetAuthURL uses an AuthConnect to return a Smartcar Connect URL that can be displayed to users.
-func (authClient *AuthClient) GetAuthURL(options AuthURLOptions) (string, error) {
-	forceApproval, state, singleSelect, vehicleInfo := options.ForceApproval, options.State, options.SingleSelect, options.MakeBypass
+// ExchangeCodeParams struct
+type ExchangeCodeParams struct {
+	Code string
+}
 
-	if authClient.ClientID == "" {
+// ExchangeRefreshTokenParams struct
+type ExchangeRefreshTokenParams struct {
+	Token string
+}
+
+// Auth interface is a...
+type Auth interface {
+	GetAuthURL(*AuthURLParams) (string, error)
+	ExchangeCode(context.Context, *ExchangeCodeParams) (*Token, error)
+	ExchangeRefreshToken(context.Context, *ExchangeRefreshTokenParams) (*Token, error)
+}
+
+// auth is used to store your auth credentials when authenticating with Smartcar.
+type auth struct {
+	clientID     string
+	clientSecret string
+	redirectURI  string
+	scope        []string
+	testMode     bool
+	sC           backendClient
+}
+
+// GetAuthURL generates Smartcar Connect URL.
+func (c *auth) GetAuthURL(params *AuthURLParams) (string, error) {
+	forceApproval, state, singleSelect, vehicleInfo := params.ForceApproval, params.State, params.SingleSelect, params.MakeBypass
+
+	if c.clientID == "" {
 		return "", errors.New("AuthClient.ClientID missing")
 	}
 
-	if authClient.RedirectURI == "" {
+	if c.redirectURI == "" {
 		return "", errors.New("AuthClient.RedirectURI missing")
 	}
 
-	// Build Connect URL from constants.go
-	connectURL := utils.GetConnectURL()
-	query := connectURL.Query()
+	// Build Connect URL from go
+	baseURL, _ := url.Parse(connectURL)
+	query := baseURL.Query()
 	query.Set("response_type", "code")
-	query.Set("client_id", authClient.ClientID)
-	query.Set("redirect_uri", authClient.RedirectURI)
+	query.Set("client_id", c.clientID)
+	query.Set("redirect_uri", c.redirectURI)
 
-	if authClient.Scope != nil {
-		query.Set("scope", strings.Join(authClient.Scope, " "))
+	if c.scope != nil {
+		query.Set("scope", strings.Join(c.scope, " "))
 	}
 
-	if authClient.TestMode {
+	if c.testMode {
 		query.Set("mode", "test")
 	}
 
@@ -98,92 +116,72 @@ func (authClient *AuthClient) GetAuthURL(options AuthURLOptions) (string, error)
 
 	if vehicleInfo != (MakeBypass{}) {
 		if vehicleInfo.Make != "" {
-			query.Set("make", vehicleInfo.Make)
+			query.Set("make", string(vehicleInfo.Make))
 		}
 	}
 
 	if singleSelect != (SingleSelect{}) {
 		singleSelectEnabled := singleSelect.Enabled
-		if singleSelect.Vin != "" {
-			query.Set("single_select_vin", singleSelect.Vin)
+		if singleSelect.VIN != "" {
+			query.Set("single_select_vin", singleSelect.VIN)
 			singleSelectEnabled = true
 		}
 		query.Set("single_select", strconv.FormatBool(singleSelectEnabled))
 	}
 
-	connectURL.RawQuery = query.Encode()
+	baseURL.RawQuery = query.Encode()
 
-	return connectURL.String(), nil
+	return baseURL.String(), nil
 }
 
-// ExchangeCode takes an authorization code and exchanges it for an access and refresh token.
-func (authClient *AuthClient) ExchangeCode(authCode string) (Token, error) {
+// ExchangeCode exchanges authorization code for a Token.
+func (c *auth) ExchangeCode(ctx context.Context, params *ExchangeCodeParams) (*Token, error) {
 
 	data := url.Values{}
 	data.Set("grant_type", "authorization_code")
-	data.Set("code", authCode)
-	data.Set("redirect_uri", authClient.RedirectURI)
+	data.Set("code", params.Code)
+	data.Set("redirect_uri", c.redirectURI)
 
-	res, err := authClient.request(requests.POST, constants.ExchangeURL, data.Encode())
-	if err != nil {
-		return Token{}, err
+	token := &Token{}
+	if err := c.request(ctx, http.MethodPost, exchangeURL, data.Encode(), token); err != nil {
+		return nil, err
 	}
 
-	formattedResponse := new(Token)
-	defer res.Body.Close()
-	requests.FormatResponse(res.Body, formattedResponse)
+	token.AccessExpiry = time.Now().Add(time.Duration(token.ExpiresIn) * time.Second)
+	token.RefreshExpiry = time.Now().AddDate(0, 0, 60)
 
-	formattedResponse.AccessExpiry = time.Now().Add(time.Duration(formattedResponse.ExpiresIn) * time.Second)
-	formattedResponse.RefreshExpiry = time.Now().AddDate(0, 0, 60)
-
-	return *formattedResponse, nil
+	return token, nil
 }
 
-// ExchangeRefreshToken uses a basic AuthClient containing your client ID and a refresh token to return new access tokens.
-func (authClient *AuthClient) ExchangeRefreshToken(refreshToken string) (Token, error) {
+// ExchangeRefreshToken exchanges refresh token for a new Token.
+func (c *auth) ExchangeRefreshToken(ctx context.Context, params *ExchangeRefreshTokenParams) (*Token, error) {
 
 	data := url.Values{}
 	data.Set("grant_type", "refresh_token")
-	data.Set("refresh_token", refreshToken)
+	data.Set("refresh_token", params.Token)
 
-	res, resErr := authClient.request(requests.POST, constants.ExchangeURL, data.Encode())
-	if resErr != nil {
-		return Token{}, resErr
+	token := &Token{}
+	if err := c.request(ctx, http.MethodPost, exchangeURL, data.Encode(), token); err != nil {
+		return nil, err
 	}
 
-	formattedResponse := new(Token)
-	defer res.Body.Close()
-	requests.FormatResponse(res.Body, formattedResponse)
+	timeNow := time.Now()
+	token.AccessExpiry = timeNow.Add(time.Duration(token.ExpiresIn) * time.Second)
+	token.RefreshExpiry = timeNow.AddDate(0, 0, 60)
 
-	formattedResponse.AccessExpiry = time.Now().Add(time.Duration(formattedResponse.ExpiresIn) * time.Second)
-	formattedResponse.RefreshExpiry = time.Now().AddDate(0, 0, 60)
-
-	return *formattedResponse, nil
+	return token, nil
 }
 
-// IsCompatible checks compatibility for a vehicle VIN with Smartcar for the provided scopes.
-func (authClient *AuthClient) IsCompatible(vin string) (bool, error) {
-	url := utils.BuildCompatibilityURL(vin, authClient.Scope)
+// request is an internal function for sending requests, accepts an interface to
+func (c *auth) request(ctx context.Context, method string, url string, data string, target interface{}) error {
+	authorization := BuildBasicAuthorization(c.clientID, c.clientSecret)
 
-	res, resErr := authClient.request(requests.GET, url, "")
-	if resErr != nil {
-		return false, resErr
-	}
-
-	formattedResponse := new(struct {
-		Compatible bool `json:"compatible"`
+	return c.sC.Call(backendClientParams{
+		ctx:           ctx,
+		method:        method,
+		url:           url,
+		authorization: authorization,
+		body:          strings.NewReader(data),
+		target:        target,
 	})
-	defer res.Body.Close()
-	fmtErr := requests.FormatResponse(res.Body, formattedResponse)
-	if fmtErr != nil {
-		return false, fmtErr
-	}
-
-	return formattedResponse.Compatible, nil
-}
-
-func (authClient *AuthClient) request(method string, path string, data string) (http.Response, error) {
-	authorization := utils.BuildBasicAuthorization(authClient.ClientID, authClient.ClientSecret)
-
-	return requests.Request(method, path, authorization, "", strings.NewReader(data))
 }
