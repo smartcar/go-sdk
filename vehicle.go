@@ -16,21 +16,21 @@ import (
 // Disconnect formats response returned from vehicle.Disconnect().
 type Disconnect struct {
 	Status string `json:"status"`
-	smartcarHeaders
+	ResponseHeaders
 }
 
 // Battery formats response returned from vehicle.GetBattery().
 type Battery struct {
 	PercentRemaining float64 `json:"percentRemaining"`
 	Range            float64 `json:"range"`
-	smartcarHeaders
+	ResponseHeaders
 }
 
 // Charge formats response returned from vehicle.GetCharge().
 type Charge struct {
 	IsPluggedIn bool   `json:"isPluggedIn"`
 	State       string `json:"state"`
-	smartcarHeaders
+	ResponseHeaders
 }
 
 // Fuel formats response returned from vehicle.GetFuel().
@@ -38,7 +38,7 @@ type Fuel struct {
 	AmountRemaining  float64 `json:"amountRemaining"`
 	PercentRemaining float64 `json:"percentRemaining"`
 	Range            float64 `json:"range"`
-	smartcarHeaders
+	ResponseHeaders
 }
 
 // Info formats response returned from vehicle.GetInfo().
@@ -47,32 +47,32 @@ type Info struct {
 	Make  string `json:"make"`
 	Model string `json:"model"`
 	Year  int    `json:"year"`
-	smartcarHeaders
+	ResponseHeaders
 }
 
 // Location formats response returned from vehicle.GetLocation().
 type Location struct {
 	Latitude  float64 `json:"latitude"`
 	Longitude float64 `json:"longitude"`
-	smartcarHeaders
+	ResponseHeaders
 }
 
 // Odometer formats response returned from vehicle.GetOdometer().
 type Odometer struct {
 	Distance float64 `json:"distance"`
-	smartcarHeaders
+	ResponseHeaders
 }
 
 // Oil formats response returned from vehicle.GetOil().
 type Oil struct {
 	LifeRemaining float64 `json:"lifeRemaining"`
-	smartcarHeaders
+	ResponseHeaders
 }
 
 // Permissions formats response returned from vehicle.GetPermissions().
 type Permissions struct {
 	Permissions []string `json:"permissions"`
-	smartcarHeaders
+	ResponseHeaders
 }
 
 // TirePressure formats response returned from vehicle.GetTirePressure().
@@ -81,19 +81,19 @@ type TirePressure struct {
 	FrontRight float64 `json:"frontRight"`
 	BackLeft   float64 `json:"backLeft"`
 	BackRight  float64 `json:"backRight"`
-	smartcarHeaders
+	ResponseHeaders
 }
 
 // VIN formats response returned from vehicle.GetVIN().
 type VIN struct {
 	VIN string `json:"vin"`
-	smartcarHeaders
+	ResponseHeaders
 }
 
 // Security formats response returned from the vehicle.Lock(), vehicle.Unlock().
 type Security struct {
 	Status string `json:"status"`
-	smartcarHeaders
+	ResponseHeaders
 }
 
 // UnitSystem type that will have either imperic or metric.

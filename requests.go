@@ -30,8 +30,8 @@ type backendClientParams struct {
 	target                     interface{}
 }
 
-// smartcarHeaders is a struct to append headers to request
-type smartcarHeaders struct {
+// ResponseHeaders is a struct that has Smartcar's API response headers.
+type ResponseHeaders struct {
 	Age        string     `json:"age"`
 	RequestID  string     `json:"requestId"`
 	UnitSystem UnitSystem `json:"unitSystem"`
@@ -80,7 +80,7 @@ func (c *backend) formatBodyResponse(body io.Reader, target interface{}) error {
 // formatBodyResponse formats a response body using an interface.
 func (c *backend) formatHeadersResponse(headers http.Header, target interface{}) error {
 	unitSystem := unitSystems[headers.Get("Sc-Unit-System")]
-	h := &smartcarHeaders{
+	h := &ResponseHeaders{
 		Age:        headers.Get("Sc-Data-Age"),
 		RequestID:  headers.Get("Sc-Request-Id"),
 		UnitSystem: unitSystem,
