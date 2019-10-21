@@ -35,11 +35,11 @@ type SingleSelect struct {
 
 // Token is returned by auth.ExchangeCode and auth.ExchangeRefreshToken.
 type Token struct {
-	Access        string    `json:"accessToken"`
-	AccessExpiry  time.Time `json:"accessExpiry"`
-	Refresh       string    `json:"refreshToken"`
-	RefreshExpiry time.Time `json:"refreshExpiry"`
-	ExpiresIn     int       `json:"expiresIn"`
+	Access        string    `json:"access_token"`
+	AccessExpiry  time.Time `json:"access_expiry"`
+	Refresh       string    `json:"refresh_token"`
+	RefreshExpiry time.Time `json:"refresh_expiry"`
+	ExpiresIn     int       `json:"expires_in"`
 }
 
 // AuthURLParams contains the AuthClient, Pro authorization features and all fields that can be used to construct an auth URL.
