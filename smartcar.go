@@ -145,11 +145,15 @@ func (c *client) HasPermissions(ctx context.Context, v Vehicle, params *Permissi
 // NewVehicle creates an instance of Vehicle that allows you to call methods (i.e. GetInfo, GetOdometer, etc) on it and
 // send requests to Smartcar's API.
 func (c *client) NewVehicle(params *VehicleParams) Vehicle {
+	unitSystem := Metric
+	if params.UnitSystem != "" {
+		unitSystem = params.UnitSystem
+	}
 	return &vehicle{
 		id:            params.ID,
 		accessToken:   params.AccessToken,
 		client:        c.sC,
-		requestParams: requestParams{UnitSystem: params.UnitSystem},
+		requestParams: requestParams{UnitSystem: unitSystem},
 	}
 }
 
