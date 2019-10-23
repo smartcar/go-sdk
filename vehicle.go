@@ -3,21 +3,40 @@ package smartcar
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
+
+	"github.com/mitchellh/mapstructure"
 )
 
 /*
 	All of our vehicle endpoints return structs, which are defined in the following lines.
 */
 
-// Disconnect formats response returned from vehicle.Disconnect().
-type Disconnect struct {
-	Status string `json:"status"`
-	ResponseHeaders
-}
+// Key exported
+type Key string
+
+// Exported paths
+const (
+	BatteryPath      Key = "/battery"
+	ChargePath       Key = "/charge"
+	FuelPath         Key = "/fuel"
+	InfoPath         Key = "/"
+	LocationPath     Key = "/location"
+	OdometerPath     Key = "/odometer"
+	OilPath          Key = "/engine/oil"
+	PermissionsPath  Key = "/permissions"
+	TirePressurePath Key = "/tires/pressure"
+	VINPath          Key = "/vin"
+
+	// DO NOT export the paths that are not supported by Batch.
+	securityPath    Key = "/security"
+	applicationPath Key = "/application"
+	batchPath       Key = "/batch"
+)
 
 // Battery formats response returned from vehicle.GetBattery().
 type Battery struct {
@@ -30,6 +49,26 @@ type Battery struct {
 type Charge struct {
 	IsPluggedIn bool   `json:"isPluggedIn"`
 	State       string `json:"state"`
+	ResponseHeaders
+}
+
+// Data formats responses returned from vehicle.Batch().
+type Data struct {
+	Battery      *Battery      `json:"battery,omitempty"`
+	Charge       *Charge       `json:"charge,omitempty"`
+	Fuel         *Fuel         `json:"fuel,omitempty"`
+	Info         *Info         `json:"info,omitempty"`
+	Location     *Location     `json:"location,omitempty"`
+	Odometer     *Odometer     `json:"odometer,omitempty"`
+	Oil          *Oil          `json:"oil,omitempty"`
+	Permissions  *Permissions  `json:"permissions,omitempty"`
+	TirePressure *TirePressure `json:"tire_pressure,omitempty"`
+	VIN          *VIN          `json:"vin,omitempty"`
+}
+
+// Disconnect formats response returned from vehicle.Disconnect().
+type Disconnect struct {
+	Status string `json:"status"`
 	ResponseHeaders
 }
 
@@ -119,6 +158,7 @@ type UnitsParams struct {
 // Vehicle is an interface that contains all public methods available for vehicle. vehicle needs to implement
 // this methods to be able to expose them.
 type Vehicle interface {
+	Batch(context.Context, ...Key) (*Data, error)
 	Disconnect(context.Context) (*Disconnect, error)
 	GetBattery(context.Context) (*Battery, error)
 	GetCharge(context.Context) (*Charge, error)
@@ -140,80 +180,151 @@ type vehicle struct {
 	requestParams
 	id          string
 	accessToken string
-	client      backendClient // nit name
+	client      backendClient
+}
+
+type batchResponse struct {
+	Responses []struct {
+		Path    string
+		Code    int
+		Headers struct {
+			DataAge    string     `json:"sc-data-age,omitempty"`
+			RequestID  string     `json:"sc-request-id,omitempty"`
+			UnitSystem UnitSystem `json:"sc-unit-system,omitempty"`
+		} `json:"headers,omitempty"`
+		Body interface{} `json:"body"`
+	} `json:"responses"`
+}
+
+// Batch sends a request to Smartcar's API vehicle/batch endpoint.
+func (v *vehicle) Batch(ctx context.Context, keys ...Key) (*Data, error) {
+	var paths []map[string]string
+
+	for _, path := range keys {
+		paths = append(paths, map[string]string{"path": string(path)})
+	}
+	bod := map[string][]map[string]string{
+		"requests": paths,
+	}
+	marshalBody, _ := json.Marshal(bod)
+	body := bytes.NewBuffer([]byte(marshalBody))
+
+	target := new(batchResponse)
+	err := v.request(ctx, string(batchPath), http.MethodPost, v.requestParams, body, target)
+	if err != nil {
+		return nil, err
+	}
+
+	data := new(Data)
+	for _, v := range target.Responses {
+		switch v.Path {
+		case string(BatteryPath):
+			mapstructure.Decode(v.Body, &data.Battery)
+			mapstructure.Decode(v.Headers, &data.Battery.ResponseHeaders)
+		case string(ChargePath):
+			mapstructure.Decode(v.Body, &data.Charge)
+			mapstructure.Decode(v.Headers, &data.Charge.ResponseHeaders)
+		case string(FuelPath):
+			mapstructure.Decode(v.Body, &data.Fuel)
+			mapstructure.Decode(v.Headers, &data.Fuel.ResponseHeaders)
+		case string(InfoPath):
+			mapstructure.Decode(v.Body, &data.Info)
+			mapstructure.Decode(v.Headers, &data.Info.ResponseHeaders)
+		case string(LocationPath):
+			mapstructure.Decode(v.Body, &data.Location)
+			mapstructure.Decode(v.Headers, &data.Location.ResponseHeaders)
+		case string(OdometerPath):
+			mapstructure.Decode(v.Body, &data.Odometer)
+			mapstructure.Decode(v.Headers, &data.Odometer.ResponseHeaders)
+		case string(OilPath):
+			mapstructure.Decode(v.Body, &data.Oil)
+			mapstructure.Decode(v.Headers, &data.Oil.ResponseHeaders)
+		case string(PermissionsPath):
+			mapstructure.Decode(v.Body, &data.Permissions)
+			mapstructure.Decode(v.Headers, &data.Permissions.ResponseHeaders)
+		case string(TirePressurePath):
+			mapstructure.Decode(v.Body, &data.TirePressure)
+			mapstructure.Decode(v.Headers, &data.TirePressure.ResponseHeaders)
+		case string(VINPath):
+			mapstructure.Decode(v.Body, &data.VIN)
+			mapstructure.Decode(v.Headers, &data.VIN.ResponseHeaders)
+		}
+	}
+
+	return data, nil
 }
 
 // Disconnect sends a request to Smartcar's API vehicle/application endpoint.
 func (v *vehicle) Disconnect(ctx context.Context) (*Disconnect, error) {
 	disconnect := &Disconnect{}
-	return disconnect, v.request(ctx, "/application", http.MethodDelete, v.requestParams, nil, disconnect)
+	return disconnect, v.request(ctx, string(applicationPath), http.MethodDelete, v.requestParams, nil, disconnect)
 }
 
 // GetBattery sends a request to Smartcar's API vehicle/battery endpoint.
 func (v *vehicle) GetBattery(ctx context.Context) (*Battery, error) {
 	battery := &Battery{}
-	return battery, v.request(ctx, "/battery", http.MethodGet, v.requestParams, nil, battery)
+	return battery, v.request(ctx, string(BatteryPath), http.MethodGet, v.requestParams, nil, battery)
 }
 
 // GetCharge sends a request to Smartcar's API vehicle/charge endpoint.
 func (v *vehicle) GetCharge(ctx context.Context) (*Charge, error) {
 	charge := &Charge{}
-	return charge, v.request(ctx, "/charge", http.MethodGet, v.requestParams, nil, charge)
+	return charge, v.request(ctx, string(ChargePath), http.MethodGet, v.requestParams, nil, charge)
 }
 
 // GetFuel sends a request to Smartcar's API vehicle/fuel endpoint.
 func (v *vehicle) GetFuel(ctx context.Context) (*Fuel, error) {
 	fuel := &Fuel{}
-	return fuel, v.request(ctx, "/fuel", http.MethodGet, v.requestParams, nil, fuel)
+	return fuel, v.request(ctx, string(FuelPath), http.MethodGet, v.requestParams, nil, fuel)
 }
 
 // GetInfo sends a request to Smartcar's API vehicle/ endpoint.
 func (v *vehicle) GetInfo(ctx context.Context) (*Info, error) {
 	info := &Info{}
-	return info, v.request(ctx, "/", http.MethodGet, v.requestParams, nil, info)
+	return info, v.request(ctx, string(InfoPath), http.MethodGet, v.requestParams, nil, info)
 }
 
 // GetLocation sends a request to Smartcar's API vehicle/location endpoint.
 func (v *vehicle) GetLocation(ctx context.Context) (*Location, error) {
 	location := &Location{}
-	return location, v.request(ctx, "/location", http.MethodGet, v.requestParams, nil, location)
+	return location, v.request(ctx, string(LocationPath), http.MethodGet, v.requestParams, nil, location)
 }
 
 // GetOdometer sends a request to Smartcar's API vehicle/odometer endpoint.
 func (v *vehicle) GetOdometer(ctx context.Context) (*Odometer, error) {
 	odometer := &Odometer{}
-	return odometer, v.request(ctx, "/odometer", http.MethodGet, v.requestParams, nil, odometer)
+	return odometer, v.request(ctx, string(OdometerPath), http.MethodGet, v.requestParams, nil, odometer)
 }
 
 // GetOil sends a request to Smartcar's API vehicle/oil endpoint.
 func (v *vehicle) GetOil(ctx context.Context) (*Oil, error) {
 	oil := &Oil{}
-	return oil, v.request(ctx, "/engine/oil", http.MethodGet, v.requestParams, nil, oil)
+	return oil, v.request(ctx, string(OilPath), http.MethodGet, v.requestParams, nil, oil)
 }
 
 // GetPermissions sends a request to Smartcar's API vehicle/permissions endpoint.
 func (v *vehicle) GetPermissions(ctx context.Context) (*Permissions, error) {
 	permissions := &Permissions{}
-	return permissions, v.request(ctx, "/permissions", http.MethodGet, v.requestParams, nil, permissions)
+	return permissions, v.request(ctx, string(PermissionsPath), http.MethodGet, v.requestParams, nil, permissions)
 }
 
 // GetTiresPressure sends a request to Smartcar's API vehicle/tires/pressure endpoint.
 func (v *vehicle) GetTiresPressure(ctx context.Context) (*TirePressure, error) {
 	tirePressure := &TirePressure{}
-	return tirePressure, v.request(ctx, "/tires/pressure", http.MethodGet, v.requestParams, nil, tirePressure)
+	return tirePressure, v.request(ctx, string(TirePressurePath), http.MethodGet, v.requestParams, nil, tirePressure)
 }
 
 // GetVIN sends a request to Smartcar's API vehicle/vin endpoint.
 func (v *vehicle) GetVIN(ctx context.Context) (*VIN, error) {
 	vin := &VIN{}
-	return vin, v.request(ctx, "/vin", http.MethodGet, v.requestParams, nil, vin)
+	return vin, v.request(ctx, string(VINPath), http.MethodGet, v.requestParams, nil, vin)
 }
 
 // Lock sends a request to Smartcar's API vehicle/lock endpoint.
 func (v *vehicle) Lock(ctx context.Context) (*Security, error) {
 	body := bytes.NewBuffer([]byte(`{"action":"LOCK"}`))
 	lock := &Security{}
-	return lock, v.request(ctx, "/security", http.MethodPost, v.requestParams, body, lock)
+	return lock, v.request(ctx, string(securityPath), http.MethodPost, v.requestParams, body, lock)
 }
 
 /*
@@ -235,7 +346,7 @@ func (v *vehicle) SetUnitSystem(params *UnitsParams) error {
 func (v *vehicle) Unlock(ctx context.Context) (*Security, error) {
 	body := bytes.NewBuffer([]byte(`{"action":"UNLOCK"}`))
 	unlock := &Security{}
-	return unlock, v.request(ctx, "/security", http.MethodPost, v.requestParams, body, unlock)
+	return unlock, v.request(ctx, string(securityPath), http.MethodPost, v.requestParams, body, unlock)
 }
 
 /*

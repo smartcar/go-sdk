@@ -32,6 +32,13 @@ func (s *VehicleTestSuite) SetupTest() {
 	}
 }
 
+func (s *VehicleTestSuite) TestBatch() {
+	res, err := s.vehicle.Batch(context.TODO(), OdometerPath, BatteryPath)
+
+	assert.Nil(s.T(), err)
+	assert.NotNil(s.T(), res)
+}
+
 func (s *VehicleTestSuite) TestDisconnect() {
 	res, err := s.vehicle.Disconnect(context.TODO())
 

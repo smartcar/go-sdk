@@ -32,9 +32,11 @@ type backendClientParams struct {
 
 // ResponseHeaders is a struct that has Smartcar's API response headers.
 type ResponseHeaders struct {
-	Age        string     `json:"age"`
-	RequestID  string     `json:"requestId"`
-	UnitSystem UnitSystem `json:"unitSystem"`
+	// Deprecated: Should use DataAge instead of Age
+	Age        string     `json:"age,omitempty"`
+	DataAge    string     `json:"dataAge,omitempty"`
+	RequestID  string     `json:"requestId,omitempty"`
+	UnitSystem UnitSystem `json:"unitSystem,omitempty"`
 }
 
 // Call creates a http request and calls the Exectue method with it.
@@ -82,6 +84,7 @@ func (c *backend) formatHeadersResponse(headers http.Header, target interface{})
 	unitSystem := unitSystems[headers.Get("Sc-Unit-System")]
 	h := &ResponseHeaders{
 		Age:        headers.Get("Sc-Data-Age"),
+		DataAge:    headers.Get("Sc-Data-Age"),
 		RequestID:  headers.Get("Sc-Request-Id"),
 		UnitSystem: unitSystem,
 	}
