@@ -115,3 +115,32 @@ import smartcar "github.com/smartcar/go-sdk"
 	// You can change the unit systems of a vehicle at any point by doing.
 	err := vehicle.SetUnits(smartcar.UnitsParams{Unit: smartcar.UnitSystemMetric})
 	```
+
+## Pro Features
+
+### Compatibility
+Compatibility allows you to verify if a particular VIN is compatible with a scope of permissions. This method should be used prior to directing a user to the Smartcar Connect flow. [Learn more on our doc center.](https://smartcar.com/docs/connect-pro/connect-compatibility/)
+```go
+isCompatible, err := smartcarClient.IsVINCompatible(context.TODO(), &smartcar.VINCompatibleParams{
+	VIN: "<VIN>",
+	Scope: []string{"<Scope>"},
+	ClientID:     "<CLIENT_ID>",
+	ClientSecret: "<CLIENT_SECRET>",
+})
+```
+
+### Batch
+Batch allows you to send make requests to multiple endpoints in a single request.
+```go
+batch, err := vehicle.Batch(
+	context.TODO(),
+	smartcar.BatteryPath,
+	smartcar.InfoPath,
+	smartcar.LocationPath,
+	smartcar.OdometerPath,
+)
+battery := batch.Battery
+info := batch.Info
+location := batch.Location
+odometer := batch.Odometer
+```

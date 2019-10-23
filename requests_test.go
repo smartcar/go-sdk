@@ -42,6 +42,7 @@ func (s *RequestTestSuite) TestCall() {
 		SomeKey: mockValue,
 		ResponseHeaders: ResponseHeaders{
 			Age:        mockAge,
+			DataAge:    mockAge,
 			RequestID:  mockRequestID,
 			UnitSystem: mockUnitSystem,
 		},
@@ -76,6 +77,7 @@ func (s *RequestTestSuite) TestformatHeadersResponse() {
 		SomeKey: mockValue,
 		ResponseHeaders: ResponseHeaders{
 			Age:        mockAge,
+			DataAge:    mockAge,
 			RequestID:  mockRequestID,
 			UnitSystem: mockUnitSystem,
 		},
