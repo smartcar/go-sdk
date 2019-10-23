@@ -8,6 +8,7 @@ require (
 	github.com/codegangsta/gin v0.0.0-20171026143024-cafe2ce98974 // indirect
 	github.com/magiconair/properties v1.8.1 // indirect
 	github.com/mattn/go-shellwords v1.0.6 // indirect
+	github.com/mitchellh/mapstructure v1.1.2
 	github.com/pelletier/go-toml v1.4.0 // indirect
 	github.com/spf13/afero v1.2.2 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
