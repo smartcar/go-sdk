@@ -120,7 +120,7 @@ func (s *AuthenticationTestSuite) TestExchangeCode() {
 }
 
 func (s *AuthenticationTestSuite) TestExchangeRefreshToken() {
-	token, err := s.auth.ExchangeCode(context.TODO(), &ExchangeCodeParams{})
+	token, err := s.auth.ExchangeRefreshToken(context.TODO(), &ExchangeRefreshTokenParams{})
 
 	assert.Nil(s.T(), err)
 	assert.NotNil(s.T(), token)
