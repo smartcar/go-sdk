@@ -16,10 +16,10 @@ import (
 	All of our vehicle endpoints return structs, which are defined in the following lines.
 */
 
-// Key exported
+// Key is a type to used for API endpoints
 type Key string
 
-// Exported paths
+// Helper types to use in vehicle.Batch()
 const (
 	BatteryPath      Key = "/battery"
 	ChargePath       Key = "/charge"
@@ -62,7 +62,7 @@ type Data struct {
 	Odometer     *Odometer     `json:"odometer,omitempty"`
 	Oil          *Oil          `json:"oil,omitempty"`
 	Permissions  *Permissions  `json:"permissions,omitempty"`
-	TirePressure *TirePressure `json:"tire_pressure,omitempty"`
+	TirePressure *TirePressure `json:"tirePressure,omitempty"`
 	VIN          *VIN          `json:"vin,omitempty"`
 }
 
@@ -198,19 +198,19 @@ type batchResponse struct {
 
 // Batch sends a request to Smartcar's API vehicle/batch endpoint.
 func (v *vehicle) Batch(ctx context.Context, keys ...Key) (*Data, error) {
-	var paths []map[string]string
+	var requests []map[string]string
 
 	for _, path := range keys {
-		paths = append(paths, map[string]string{"path": string(path)})
+		requests = append(requests, map[string]string{"path": string(path)})
 	}
-	bod := map[string][]map[string]string{
-		"requests": paths,
+	body := map[string][]map[string]string{
+		"requests": requests,
 	}
-	marshalBody, _ := json.Marshal(bod)
-	body := bytes.NewBuffer([]byte(marshalBody))
+	marshalBody, _ := json.Marshal(body)
+	bufferedBody := bytes.NewBuffer([]byte(marshalBody))
 
 	target := new(batchResponse)
-	err := v.request(ctx, string(batchPath), http.MethodPost, v.requestParams, body, target)
+	err := v.request(ctx, string(batchPath), http.MethodPost, v.requestParams, bufferedBody, target)
 	if err != nil {
 		return nil, err
 	}
