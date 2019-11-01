@@ -307,7 +307,7 @@ func (s *VehicleE2ETestSuite) TestGetVINE2E() {
 }
 
 func (s *VehicleE2ETestSuite) TestLockE2E() {
-	mockStatus := "1234DLFAJ4"
+	mockStatus := "success"
 	expectedResponse := &Security{
 		Status:          mockStatus,
 		ResponseHeaders: s.responseHeaders,
@@ -323,7 +323,7 @@ func (s *VehicleE2ETestSuite) TestLockE2E() {
 }
 
 func (s *VehicleE2ETestSuite) TestUnlockE2E() {
-	mockStatus := "1234DLFAJ4"
+	mockStatus := "success"
 	expectedResponse := &Security{
 		Status:          mockStatus,
 		ResponseHeaders: s.responseHeaders,
