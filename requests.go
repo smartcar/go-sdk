@@ -62,7 +62,11 @@ func (c *backend) execute(req *http.Request, target interface{}) error {
 	defer res.Body.Close()
 
 	if res.StatusCode != 200 {
-		return errors.New(http.StatusText(res.StatusCode))
+		message := http.StatusText(res.StatusCode)
+		if message == "" {
+			return errors.New(res.Status)
+		}
+		return errors.New(message)
 	}
 
 	if err := c.formatHeadersResponse(res.Header, target); err != nil {
