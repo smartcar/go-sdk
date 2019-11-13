@@ -5,13 +5,21 @@ go:
   - 1.12.x
   - 1.13.x
 
-before_install:
+install:
   - go get -t -v ./...
   - travis_retry go get -u golang.org/x/lint/golint
-
-install:
   - make
-  - make coverage
-
+script:
+  - make test
 after_success:
   - bash <(curl -s https://codecov.io/bash)
+
+jobs:
+  include:
+    - stage: publish
+      language: node_js
+      node_js: 10
+      install:
+        - npm install -g semantic-release@15.x.x
+      script:
+        - semantic-release

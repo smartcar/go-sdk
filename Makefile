@@ -10,8 +10,8 @@ lint:
 vet:
 	go vet ./...
 
-coverage:
-	go test -coverprofile=coverage.txt -covermode=atomic
+test:
+	go test ./... -coverprofile=coverage.txt -covermode=atomic
 
 build:
 	go build ./...
