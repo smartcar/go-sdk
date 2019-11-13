@@ -5,6 +5,10 @@ go:
   - 1.12.x
   - 1.13.x
 
+stages:
+  - test
+  - publish
+
 jobs:
   include:
     - stage: test
