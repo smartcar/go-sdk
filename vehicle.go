@@ -33,9 +33,10 @@ const (
 	VINPath          Key = "/vin"
 
 	// DO NOT export the paths that are not supported by Batch.
-	securityPath    Key = "/security"
-	applicationPath Key = "/application"
-	batchPath       Key = "/batch"
+	securityPath      Key = "/security"
+	chargeControlPath Key = "/charge"
+	applicationPath   Key = "/application"
+	batchPath         Key = "/batch"
 )
 
 // Battery formats response returned from vehicle.GetBattery().
@@ -135,6 +136,12 @@ type Security struct {
 	ResponseHeaders
 }
 
+// Charge formats response returned from the vehicle.StartCharge(), vehicle.StopCharge().
+type ChargeControl struct {
+	Status string `json:"status"`
+	ResponseHeaders
+}
+
 // UnitSystem type that will have either imperic or metric.
 type UnitSystem string
 
@@ -173,6 +180,8 @@ type Vehicle interface {
 	Lock(context.Context) (*Security, error)
 	SetUnitSystem(*UnitsParams) error
 	Unlock(context.Context) (*Security, error)
+	StartCharge(context.Context) (*ChargeControl, error)
+	StopCharge(context.Context) (*ChargeControl, error)
 }
 
 // vehicle client that implements the Vehicle interface.
@@ -347,6 +356,20 @@ func (v *vehicle) Unlock(ctx context.Context) (*Security, error) {
 	body := bytes.NewBuffer([]byte(`{"action":"UNLOCK"}`))
 	unlock := &Security{}
 	return unlock, v.request(ctx, string(securityPath), http.MethodPost, v.requestParams, body, unlock)
+}
+
+// StartCharge sends a request to Smartcar's API to start charging on a vehicle.
+func (v *vehicle) StartCharge(ctx context.Context) (*ChargeControl, error) {
+	body := bytes.NewBuffer([]byte(`{"action":"START"}`))
+	startcharge := &ChargeControl{}
+	return startcharge, v.request(ctx, string(chargeControlPath), http.MethodPost, v.requestParams, body, startcharge)
+}
+
+// StopCharge sends a request to Smartcar's API to stop charging on a vehicle.
+func (v *vehicle) StopCharge(ctx context.Context) (*ChargeControl, error) {
+	body := bytes.NewBuffer([]byte(`{"action":"STOP"}`))
+	stopcharge := &ChargeControl{}
+	return stopcharge, v.request(ctx, string(chargeControlPath), http.MethodPost, v.requestParams, body, stopcharge)
 }
 
 /*

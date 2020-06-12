@@ -148,6 +148,20 @@ func (s *VehicleTestSuite) TestUnlock() {
 	assert.NotNil(s.T(), res)
 }
 
+func (s *VehicleTestSuite) TestStartCharge() {
+	res, err := s.vehicle.StartCharge(context.TODO())
+
+	assert.Nil(s.T(), err)
+	assert.NotNil(s.T(), res)
+}
+
+func (s *VehicleTestSuite) TestStopCharge() {
+	res, err := s.vehicle.StopCharge(context.TODO())
+
+	assert.Nil(s.T(), err)
+	assert.NotNil(s.T(), res)
+}
+
 func TestVehicleTestSuite(t *testing.T) {
 	suite.Run(t, new(VehicleTestSuite))
 }
