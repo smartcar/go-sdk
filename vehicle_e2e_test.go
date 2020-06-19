@@ -338,6 +338,38 @@ func (s *VehicleE2ETestSuite) TestUnlockE2E() {
 	assert.Equal(s.T(), expectedResponse, res)
 }
 
+func (s *VehicleE2ETestSuite) TestStartChargeE2E() {
+	mockStatus := "success"
+	expectedResponse := &ChargeControl{
+		Status:          mockStatus,
+		ResponseHeaders: s.responseHeaders,
+	}
+	mockURL := buildVehicleURL(string(chargeControlPath), s.vehicle.id)
+	mockResponse := map[string]interface{}{"status": mockStatus}
+	mockVehicleAPI(mockURL, s.vehicle.accessToken, s.responseHeaders, mockResponse)
+
+	res, err := s.vehicle.StartCharge(context.TODO())
+
+	assert.Nil(s.T(), err)
+	assert.Equal(s.T(), expectedResponse, res)
+}
+
+func (s *VehicleE2ETestSuite) TestStopChargeE2E() {
+	mockStatus := "success"
+	expectedResponse := &ChargeControl{
+		Status:          mockStatus,
+		ResponseHeaders: s.responseHeaders,
+	}
+	mockURL := buildVehicleURL(string(chargeControlPath), s.vehicle.id)
+	mockResponse := map[string]interface{}{"status": mockStatus}
+	mockVehicleAPI(mockURL, s.vehicle.accessToken, s.responseHeaders, mockResponse)
+
+	res, err := s.vehicle.StopCharge(context.TODO())
+
+	assert.Nil(s.T(), err)
+	assert.Equal(s.T(), expectedResponse, res)
+}
+
 func TestVehicleE2ETestSuite(t *testing.T) {
 	suite.Run(t, new(VehicleE2ETestSuite))
 }
