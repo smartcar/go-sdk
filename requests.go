@@ -12,9 +12,9 @@ import (
 	"time"
 )
 
-// HTTPTimeout request set to 5 minutes. This is standard accross our SDKs.
+// HTTPTimeout request set to 310 seconds. This is standard accross our SDKs.
 const (
-	defaultHTTPTimeout = time.Duration(5) * time.Minute
+	defaultHTTPTimeout = time.Duration(310) * time.Second
 )
 
 // requestParams is a helper struct to send accross the requests methods.
