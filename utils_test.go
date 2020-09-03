@@ -39,7 +39,18 @@ func TestBuildCompatibilityURL(t *testing.T) {
 	expectedURL := "https://api.smartcar.com/v1.0/compatibility/?scope=scope&vin=vin"
 
 	// Act
-	url := buildCompatibilityURL("vin", []string{"scope"})
+	url := buildCompatibilityURL("vin", []string{"scope"}, "")
+
+	// Assert
+	assert.Equal(t, url, expectedURL)
+}
+
+func TestBuildCompatibilityURLCountry(t *testing.T) {
+	// Arrange
+	expectedURL := "https://api.smartcar.com/v1.0/compatibility/?country=DE&scope=scope&vin=vin"
+
+	// Act
+	url := buildCompatibilityURL("vin", []string{"scope"}, "DE")
 
 	// Assert
 	assert.Equal(t, url, expectedURL)

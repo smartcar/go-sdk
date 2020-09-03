@@ -120,12 +120,14 @@ func (s *SmartcarE2ETestSuite) TestIsVINCompatibleE2E() {
 	mockResponse := map[string]interface{}{
 		"compatible": mockCompatibility,
 	}
-	mockURL := buildCompatibilityURL(mockVIN, mockScope)
+        mockCountry := ""
+	mockURL := buildCompatibilityURL(mockVIN, mockScope, mockCountry)
 	mockSmartcarAPI(mockURL, buildBasicAuthorization(mockID, mockSecret), mockResponse)
 
 	res, err := s.client.IsVINCompatible(context.TODO(), &VINCompatibleParams{
 		VIN:          mockVIN,
 		Scope:        mockScope,
+                Country:      mockCountry,
 		ClientID:     mockID,
 		ClientSecret: mockSecret,
 	})

@@ -53,6 +53,7 @@ type AuthParams struct {
 type VINCompatibleParams struct {
 	VIN          string
 	Scope        []string
+        Country      string
 	ClientID     string
 	ClientSecret string
 }
@@ -102,7 +103,7 @@ func (c *client) IsTokenExpired(params *TokenExpiredParams) bool {
 
 // IsVINCompatible checks if a VIN is compatible for a list scopes.
 func (c *client) IsVINCompatible(ctx context.Context, params *VINCompatibleParams) (bool, error) {
-	url := buildCompatibilityURL(params.VIN, params.Scope)
+	url := buildCompatibilityURL(params.VIN, params.Scope, params.Country)
 
 	isCompatible := new(struct {
 		Compatible bool
