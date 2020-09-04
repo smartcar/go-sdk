@@ -24,9 +24,9 @@ func buildCompatibilityURL(vin string, scope []string, country string) string {
 	query := baseURL.Query()
 	query.Set("vin", vin)
 	query.Set("scope", strings.Join(scope, " "))
-        if len(country) > 0 {
-          query.Set("country", country)
-        }
+	if len(country) > 0 {
+		query.Set("country", country)
+	}
 	baseURL.RawQuery = query.Encode()
 
 	return baseURL.String()

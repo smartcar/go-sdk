@@ -53,7 +53,7 @@ type AuthParams struct {
 type VINCompatibleParams struct {
 	VIN          string
 	Scope        []string
-        Country      string
+	Country      string
 	ClientID     string
 	ClientSecret string
 }
