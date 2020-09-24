@@ -98,6 +98,8 @@ func (c *auth) GetAuthURL(params *AuthURLParams) (string, error) {
 	query.Set("redirect_uri", c.redirectURI)
 	if len(country) > 0 {
 		query.Set("flags", "country:"+country)
+	} else {
+		query.Set("flags", "country:US")
 	}
 
 	if c.scope != nil {

@@ -72,7 +72,7 @@ func (s *AuthenticationTestSuite) TestGetAuthURLEmptyParams() {
 	expectedURL := url.QueryEscape(s.auth.redirectURI)
 	params := AuthURLParams{}
 	expectedAuthURL := fmt.Sprintf(
-		"https://connect.smartcar.com/oauth/authorize?approval_prompt=auto&client_id=%s&redirect_uri=%s&response_type=code&scope=%s",
+		"https://connect.smartcar.com/oauth/authorize?approval_prompt=auto&client_id=%s&flags=country%%3AUS&redirect_uri=%s&response_type=code&scope=%s",
 		s.auth.clientID,
 		expectedURL,
 		expectedScope,
@@ -87,7 +87,7 @@ func (s *AuthenticationTestSuite) TestGetAuthURLAllParams() {
 	make := "TESLA"
 	state := "state"
 	VIN := "123456789901234567"
-	Country := "US"
+	Country := "DE"
 	expectedScope := strings.Join(s.auth.scope[:], "+")
 	expectedURL := url.QueryEscape(s.auth.redirectURI)
 	params := AuthURLParams{
