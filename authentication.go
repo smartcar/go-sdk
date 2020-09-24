@@ -46,7 +46,7 @@ type Token struct {
 type AuthURLParams struct {
 	ForceApproval bool
 	State         string
-	Country       string
+	Flags         string
 	MakeBypass
 	SingleSelect
 }
@@ -80,7 +80,7 @@ type auth struct {
 
 // GetAuthURL generates Smartcar Connect URL.
 func (c *auth) GetAuthURL(params *AuthURLParams) (string, error) {
-	forceApproval, state, singleSelect, vehicleInfo, country := params.ForceApproval, params.State, params.SingleSelect, params.MakeBypass, params.Country
+	forceApproval, state, singleSelect, vehicleInfo, flags := params.ForceApproval, params.State, params.SingleSelect, params.MakeBypass, params.Flags
 
 	if c.clientID == "" {
 		return "", errors.New("AuthClient.ClientID missing")
@@ -96,10 +96,8 @@ func (c *auth) GetAuthURL(params *AuthURLParams) (string, error) {
 	query.Set("response_type", "code")
 	query.Set("client_id", c.clientID)
 	query.Set("redirect_uri", c.redirectURI)
-	if len(country) > 0 {
-		query.Set("flags", "country:"+country)
-	} else {
-		query.Set("flags", "country:US")
+	if len(flags) > 0 {
+		query.Set("flags", flags)
 	}
 
 	if c.scope != nil {

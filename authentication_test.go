@@ -72,7 +72,7 @@ func (s *AuthenticationTestSuite) TestGetAuthURLEmptyParams() {
 	expectedURL := url.QueryEscape(s.auth.redirectURI)
 	params := AuthURLParams{}
 	expectedAuthURL := fmt.Sprintf(
-		"https://connect.smartcar.com/oauth/authorize?approval_prompt=auto&client_id=%s&flags=country%%3AUS&redirect_uri=%s&response_type=code&scope=%s",
+		"https://connect.smartcar.com/oauth/authorize?approval_prompt=auto&client_id=%s&redirect_uri=%s&response_type=code&scope=%s",
 		s.auth.clientID,
 		expectedURL,
 		expectedScope,
@@ -87,20 +87,21 @@ func (s *AuthenticationTestSuite) TestGetAuthURLAllParams() {
 	make := "TESLA"
 	state := "state"
 	VIN := "123456789901234567"
-	Country := "DE"
+	Flags := "country:DE"
 	expectedScope := strings.Join(s.auth.scope[:], "+")
 	expectedURL := url.QueryEscape(s.auth.redirectURI)
+	expectedFlags := url.QueryEscape(Flags)
 	params := AuthURLParams{
 		ForceApproval: true,
 		State:         state,
 		MakeBypass:    MakeBypass{Make: make},
 		SingleSelect:  SingleSelect{VIN: VIN},
-		Country:       Country,
+		Flags:         Flags,
 	}
 	expectedAuthURL := fmt.Sprintf(
-		"https://connect.smartcar.com/oauth/authorize?approval_prompt=force&client_id=%s&flags=country%%3A%s&make=%s&redirect_uri=%s&response_type=code&scope=%s&single_select=true&single_select_vin=%s&state=%s",
+		"https://connect.smartcar.com/oauth/authorize?approval_prompt=force&client_id=%s&flags=%s&make=%s&redirect_uri=%s&response_type=code&scope=%s&single_select=true&single_select_vin=%s&state=%s",
 		s.auth.clientID,
-		Country,
+		expectedFlags,
 		make,
 		expectedURL,
 		expectedScope,
