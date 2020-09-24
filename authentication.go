@@ -46,7 +46,7 @@ type Token struct {
 type AuthURLParams struct {
 	ForceApproval bool
 	State         string
-	Flags         string
+	Flags         []string
 	MakeBypass
 	SingleSelect
 }
@@ -97,7 +97,7 @@ func (c *auth) GetAuthURL(params *AuthURLParams) (string, error) {
 	query.Set("client_id", c.clientID)
 	query.Set("redirect_uri", c.redirectURI)
 	if len(flags) > 0 {
-		query.Set("flags", flags)
+		query.Set("flags", strings.Join(flags, " "))
 	}
 
 	if c.scope != nil {
