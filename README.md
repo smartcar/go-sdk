@@ -34,7 +34,7 @@ import smartcar "github.com/smartcar/go-sdk"
 		ClientID:     "<CLIENT_ID>",
 		ClientSecret: "<CLIENT_SECRET>",
 		RedirectURI:  "<REDIRECT_URI>",
-                Country:      "<Country Code>",
+		Country:      "<Country Code>",
 		Scope:        []string{"read_vehicle_info"},
 		TestMode:     true,
 	})
@@ -125,7 +125,7 @@ Compatibility allows you to verify if a particular VIN is compatible with a scop
 isCompatible, err := smartcarClient.IsVINCompatible(context.TODO(), &smartcar.VINCompatibleParams{
 	VIN: "<VIN>",
 	Scope: []string{"<Scope>"},
-        Country: "<Country Code>",
+	Country: "<Country Code>",
 	ClientID:     "<CLIENT_ID>",
 	ClientSecret: "<CLIENT_SECRET>",
 })
