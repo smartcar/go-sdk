@@ -26,7 +26,7 @@ import smartcar "github.com/smartcar/go-sdk"
 	smartcarClient := smartcar.NewClient()
 	```
 
-1. Initialize an `Auth` Client struct with your `client id`, `client secret`, `redirect URI`, the `scopes` you want, [`Country`](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2), and `test mode`.
+1. Initialize an `Auth` Client struct with your `client id`, `client secret`, `redirect URI`, the `scopes` you want, `flags`, and `test mode`.
 
 	```go
 	// An Auth Client is used to generate a smartcar connect url, authenticate with smartcar, and check compatibility
@@ -34,7 +34,7 @@ import smartcar "github.com/smartcar/go-sdk"
 		ClientID:     "<CLIENT_ID>",
 		ClientSecret: "<CLIENT_SECRET>",
 		RedirectURI:  "<REDIRECT_URI>",
-		Country:      "<Country Code>",
+		Flags:      "<Optional Flags>",
 		Scope:        []string{"read_vehicle_info"},
 		TestMode:     true,
 	})
