@@ -87,7 +87,7 @@ func (s *AuthenticationTestSuite) TestGetAuthURLAllParams() {
 	make := "TESLA"
 	state := "state"
 	VIN := "123456789901234567"
-        Flags := []string{"country:DE"}
+	Flags := []string{"country:DE"}
 	expectedScope := strings.Join(s.auth.scope[:], "+")
 	expectedURL := url.QueryEscape(s.auth.redirectURI)
 	expectedFlags := url.QueryEscape(Flags[0])
