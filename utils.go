@@ -19,11 +19,16 @@ func buildBearerAuthorization(accessToken string) string {
 }
 
 // buildCompatibilityURL based on vin and scope
-func buildCompatibilityURL(vin string, scope []string) string {
+func buildCompatibilityURL(vin string, scope []string, country string) string {
 	baseURL, _ := url.Parse(compatibilityURL)
 	query := baseURL.Query()
 	query.Set("vin", vin)
 	query.Set("scope", strings.Join(scope, " "))
+	if len(country) > 0 {
+		query.Set("country", country)
+	} else {
+		query.Set("country", "US")
+	}
 	baseURL.RawQuery = query.Encode()
 
 	return baseURL.String()

@@ -87,17 +87,21 @@ func (s *AuthenticationTestSuite) TestGetAuthURLAllParams() {
 	make := "TESLA"
 	state := "state"
 	VIN := "123456789901234567"
+	Flags := []string{"country:DE"}
 	expectedScope := strings.Join(s.auth.scope[:], "+")
 	expectedURL := url.QueryEscape(s.auth.redirectURI)
+	expectedFlags := url.QueryEscape(Flags[0])
 	params := AuthURLParams{
 		ForceApproval: true,
 		State:         state,
 		MakeBypass:    MakeBypass{Make: make},
 		SingleSelect:  SingleSelect{VIN: VIN},
+		Flags:         Flags,
 	}
 	expectedAuthURL := fmt.Sprintf(
-		"https://connect.smartcar.com/oauth/authorize?approval_prompt=force&client_id=%s&make=%s&redirect_uri=%s&response_type=code&scope=%s&single_select=true&single_select_vin=%s&state=%s",
+		"https://connect.smartcar.com/oauth/authorize?approval_prompt=force&client_id=%s&flags=%s&make=%s&redirect_uri=%s&response_type=code&scope=%s&single_select=true&single_select_vin=%s&state=%s",
 		s.auth.clientID,
+		expectedFlags,
 		make,
 		expectedURL,
 		expectedScope,

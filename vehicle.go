@@ -136,7 +136,7 @@ type Security struct {
 	ResponseHeaders
 }
 
-// Charge formats response returned from the vehicle.StartCharge(), vehicle.StopCharge().
+// ChargeControl Charge formats response returned from the vehicle.StartCharge(), vehicle.StopCharge().
 type ChargeControl struct {
 	Status string `json:"status"`
 	ResponseHeaders

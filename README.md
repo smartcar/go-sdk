@@ -26,7 +26,7 @@ import smartcar "github.com/smartcar/go-sdk"
 	smartcarClient := smartcar.NewClient()
 	```
 
-1. Initialize an `Auth` Client struct with your `client id`, `client secret`, `redirect URI`, the `scopes` you want, and `test mode`.
+1. Initialize an `Auth` Client struct with your `client id`, `client secret`, `redirect URI`, the `scopes` you want, `flags`, and `test mode`.
 
 	```go
 	// An Auth Client is used to generate a smartcar connect url, authenticate with smartcar, and check compatibility
@@ -34,6 +34,7 @@ import smartcar "github.com/smartcar/go-sdk"
 		ClientID:     "<CLIENT_ID>",
 		ClientSecret: "<CLIENT_SECRET>",
 		RedirectURI:  "<REDIRECT_URI>",
+		Flags:      "<Optional Flags>",
 		Scope:        []string{"read_vehicle_info"},
 		TestMode:     true,
 	})
@@ -119,11 +120,12 @@ import smartcar "github.com/smartcar/go-sdk"
 ## Pro Features
 
 ### Compatibility
-Compatibility allows you to verify if a particular VIN is compatible with a scope of permissions. This method should be used prior to directing a user to the Smartcar Connect flow. [Learn more on our doc center.](https://smartcar.com/docs/connect-pro/connect-compatibility/)
+Compatibility allows you to verify if a particular VIN is compatible with a scope of permissions. This method should be used prior to directing a user to the Smartcar Connect flow. [Learn more on our doc center.](https://smartcar.com/docs/connect-pro/connect-compatibility/). For details on how to specify country code strings refer to [ISO 3166-1 alpha-2](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2)
 ```go
 isCompatible, err := smartcarClient.IsVINCompatible(context.TODO(), &smartcar.VINCompatibleParams{
 	VIN: "<VIN>",
 	Scope: []string{"<Scope>"},
+	Country: "<Country Code>",
 	ClientID:     "<CLIENT_ID>",
 	ClientSecret: "<CLIENT_SECRET>",
 })
