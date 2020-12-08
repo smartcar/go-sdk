@@ -137,6 +137,22 @@ func (s *VehicleE2ETestSuite) TestGetBatteryE2E() {
 	assert.Equal(s.T(), expectedResponse, res)
 }
 
+func (s *VehicleE2ETestSuite) TestGetBatteryCapacityE2E() {
+	mockCapacity := 24.0
+	expectedResponse := &BatteryCapacity{
+		Capacity:        mockCapacity,
+		ResponseHeaders: s.responseHeaders,
+	}
+	mockURL := buildVehicleURL(string(BatteryPath), s.vehicle.id)
+	mockResponse := map[string]interface{}{"capacity": mockCapacity}
+	mockVehicleAPI(mockURL, s.vehicle.accessToken, s.responseHeaders, mockResponse)
+
+	res, err := s.vehicle.GetBatteryCapacity(context.TODO())
+
+	assert.Nil(s.T(), err)
+	assert.Equal(s.T(), expectedResponse, res)
+}
+
 func (s *VehicleE2ETestSuite) TestGetChargeE2E() {
 	mockIsPluggedIn := true
 	mockState := "FULLY_CHARGED"
