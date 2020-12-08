@@ -100,6 +100,7 @@ import smartcar "github.com/smartcar/go-sdk"
 	```go
 	// Vehicle Endpoints
 	battery, err := vehicle.GetBattery(context.TODO())
+	batteryCapacity, err := vehicle.GetBatteryCapacity(context.TODO())
 	charge, err := vehicle.GetCharge(context.TODO())
 	disconnect, err := vehicle.Disconnect(context.TODO())
 	fuel, err := vehicle.GetFuel(context.TODO())
