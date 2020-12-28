@@ -53,6 +53,13 @@ func (s *VehicleTestSuite) TestGetBattery() {
 	assert.NotNil(s.T(), res)
 }
 
+func (s *VehicleTestSuite) TestGetBatteryCapacity() {
+	res, err := s.vehicle.GetBatteryCapacity(context.TODO())
+
+	assert.Nil(s.T(), err)
+	assert.NotNil(s.T(), res)
+}
+
 func (s *VehicleTestSuite) TestGetCharge() {
 	res, err := s.vehicle.GetCharge(context.TODO())
 

@@ -21,16 +21,17 @@ type Key string
 
 // Helper types to use in vehicle.Batch()
 const (
-	BatteryPath      Key = "/battery"
-	ChargePath       Key = "/charge"
-	FuelPath         Key = "/fuel"
-	InfoPath         Key = "/"
-	LocationPath     Key = "/location"
-	OdometerPath     Key = "/odometer"
-	OilPath          Key = "/engine/oil"
-	PermissionsPath  Key = "/permissions"
-	TirePressurePath Key = "/tires/pressure"
-	VINPath          Key = "/vin"
+	BatteryPath         Key = "/battery"
+	BatteryCapacityPath Key = "/battery/capacity"
+	ChargePath          Key = "/charge"
+	FuelPath            Key = "/fuel"
+	InfoPath            Key = "/"
+	LocationPath        Key = "/location"
+	OdometerPath        Key = "/odometer"
+	OilPath             Key = "/engine/oil"
+	PermissionsPath     Key = "/permissions"
+	TirePressurePath    Key = "/tires/pressure"
+	VINPath             Key = "/vin"
 
 	// DO NOT export the paths that are not supported by Batch.
 	securityPath      Key = "/security"
@@ -46,6 +47,12 @@ type Battery struct {
 	ResponseHeaders
 }
 
+// BatteryCapacity formats response returned from vehicle.GetBatteryCapacity().
+type BatteryCapacity struct {
+	Capacity float64 `json:"capacity"`
+	ResponseHeaders
+}
+
 // Charge formats response returned from vehicle.GetCharge().
 type Charge struct {
 	IsPluggedIn bool   `json:"isPluggedIn"`
@@ -55,16 +62,17 @@ type Charge struct {
 
 // Data formats responses returned from vehicle.Batch().
 type Data struct {
-	Battery      *Battery      `json:"battery,omitempty"`
-	Charge       *Charge       `json:"charge,omitempty"`
-	Fuel         *Fuel         `json:"fuel,omitempty"`
-	Info         *Info         `json:"info,omitempty"`
-	Location     *Location     `json:"location,omitempty"`
-	Odometer     *Odometer     `json:"odometer,omitempty"`
-	Oil          *Oil          `json:"oil,omitempty"`
-	Permissions  *Permissions  `json:"permissions,omitempty"`
-	TirePressure *TirePressure `json:"tirePressure,omitempty"`
-	VIN          *VIN          `json:"vin,omitempty"`
+	Battery         *Battery         `json:"battery,omitempty"`
+	BatteryCapacity *BatteryCapacity `json:"batteryCapacity,omitempty"`
+	Charge          *Charge          `json:"charge,omitempty"`
+	Fuel            *Fuel            `json:"fuel,omitempty"`
+	Info            *Info            `json:"info,omitempty"`
+	Location        *Location        `json:"location,omitempty"`
+	Odometer        *Odometer        `json:"odometer,omitempty"`
+	Oil             *Oil             `json:"oil,omitempty"`
+	Permissions     *Permissions     `json:"permissions,omitempty"`
+	TirePressure    *TirePressure    `json:"tirePressure,omitempty"`
+	VIN             *VIN             `json:"vin,omitempty"`
 }
 
 // Disconnect formats response returned from vehicle.Disconnect().
@@ -168,6 +176,7 @@ type Vehicle interface {
 	Batch(context.Context, ...Key) (*Data, error)
 	Disconnect(context.Context) (*Disconnect, error)
 	GetBattery(context.Context) (*Battery, error)
+	GetBatteryCapacity(context.Context) (*BatteryCapacity, error)
 	GetCharge(context.Context) (*Charge, error)
 	GetFuel(context.Context) (*Fuel, error)
 	GetInfo(context.Context) (*Info, error)
@@ -230,6 +239,9 @@ func (v *vehicle) Batch(ctx context.Context, keys ...Key) (*Data, error) {
 		case string(BatteryPath):
 			mapstructure.Decode(v.Body, &data.Battery)
 			mapstructure.Decode(v.Headers, &data.Battery.ResponseHeaders)
+		case string(BatteryCapacityPath):
+			mapstructure.Decode(v.Body, &data.BatteryCapacity)
+			mapstructure.Decode(v.Headers, &data.BatteryCapacity.ResponseHeaders)
 		case string(ChargePath):
 			mapstructure.Decode(v.Body, &data.Charge)
 			mapstructure.Decode(v.Headers, &data.Charge.ResponseHeaders)
@@ -273,6 +285,12 @@ func (v *vehicle) Disconnect(ctx context.Context) (*Disconnect, error) {
 func (v *vehicle) GetBattery(ctx context.Context) (*Battery, error) {
 	battery := &Battery{}
 	return battery, v.request(ctx, string(BatteryPath), http.MethodGet, v.requestParams, nil, battery)
+}
+
+// GetBatteryCapacity sends a request to Smartcar's API vehicle/battery/capacity endpoint.
+func (v *vehicle) GetBatteryCapacity(ctx context.Context) (*BatteryCapacity, error) {
+	batteryCapacity := &BatteryCapacity{}
+	return batteryCapacity, v.request(ctx, string(BatteryCapacityPath), http.MethodGet, v.requestParams, nil, batteryCapacity)
 }
 
 // GetCharge sends a request to Smartcar's API vehicle/charge endpoint.
