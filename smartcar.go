@@ -181,7 +181,7 @@ func (c *client) NewAuth(params *AuthParams) Auth {
 }
 
 // SetAPIVersion sets version of Smartcar API to use
-func SetAPIVersion(version string) {
+func (c *client) SetAPIVersion(version string) {
 	APIVersion = version
 }
 
@@ -212,6 +212,7 @@ type Client interface {
 	HasPermissions(context.Context, Vehicle, *PermissionsParams) (bool, error)
 	NewAuth(*AuthParams) Auth
 	NewVehicle(*VehicleParams) Vehicle
+	SetAPIVersion(string)
 }
 
 // NewClient creates new SmartcarClient. This is the entry point for communicating with Smartcar's API.

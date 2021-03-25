@@ -58,7 +58,8 @@ func TestBuildCompatibilityURLCountry(t *testing.T) {
 
 func TestBuildCompatibilityURLVersion(t *testing.T) {
 	// Arrange
-	SetAPIVersion("2.0")
+	client := NewClient()
+	client.SetAPIVersion("2.0")
 	expectedURL := "https://api.smartcar.com/v2.0/compatibility/?country=US&scope=scope&vin=vin"
 
 	// Act
@@ -83,7 +84,8 @@ func TestBuildVehicleURL(t *testing.T) {
 
 func TestBuildVehicleURLVersion(t *testing.T) {
 	// Arrange
-	SetAPIVersion("2.0")
+	client := NewClient()
+	client.SetAPIVersion("2.0")
 	ID := "vehicleId"
 	path := "/path"
 	expectedURL := fmt.Sprintf(vehicleURL, "2.0") + ID + path
