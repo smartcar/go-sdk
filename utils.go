@@ -2,6 +2,7 @@ package smartcar
 
 import (
 	"encoding/base64"
+	"fmt"
 	"net/url"
 	"strings"
 )
@@ -20,7 +21,8 @@ func buildBearerAuthorization(accessToken string) string {
 
 // buildCompatibilityURL based on vin and scope
 func buildCompatibilityURL(vin string, scope []string, country string) string {
-	baseURL, _ := url.Parse(compatibilityURL)
+	versionedURL := fmt.Sprintf(compatibilityURL, APIVersion)
+	baseURL, _ := url.Parse(versionedURL)
 	query := baseURL.Query()
 	query.Set("vin", vin)
 	query.Set("scope", strings.Join(scope, " "))
@@ -36,5 +38,6 @@ func buildCompatibilityURL(vin string, scope []string, country string) string {
 
 // buildVehicleURL buids a vehicle URL with a path and ID
 func buildVehicleURL(path, ID string) string {
-	return vehicleURL + ID + path
+	versionedVehicleURL := fmt.Sprintf(vehicleURL, APIVersion)
+	return versionedVehicleURL + ID + path
 }

@@ -5,18 +5,26 @@ package smartcar
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
 )
 
 const (
-	apiURL           = "https://api.smartcar.com/v1.0/"
-	userURL          = "https://api.smartcar.com/v1.0/user/"
-	vehicleURL       = "https://api.smartcar.com/v1.0/vehicles/"
-	compatibilityURL = "https://api.smartcar.com/v1.0/compatibility/"
-	exchangeURL      = "https://auth.smartcar.com/oauth/token/"
+	apiURL2           = "https://api.smartcar.com/v1.0/"
+	userURL2          = "https://api.smartcar.com/v1.0/user/"
+	vehicleURL2       = "https://api.smartcar.com/v1.0/vehicles/"
+	compatibilityURL2 = "https://api.smartcar.com/v1.0/compatibility/"
+	exchangeURL       = "https://auth.smartcar.com/oauth/token/"
+	apiURL            = "https://api.smartcar.com/v%s/"
+	userURL           = "https://api.smartcar.com/v%s/user/"
+	vehicleURL        = "https://api.smartcar.com/v%s/vehicles/"
+	compatibilityURL  = "https://api.smartcar.com/v%s/compatibility/"
 )
+
+// APIVersion is the default version of API to use
+var APIVersion string = "1.0"
 
 // UserIDParams is a param in client.GetUserID
 type UserIDParams struct {
@@ -69,11 +77,12 @@ func (c *client) GetUserID(ctx context.Context, params *UserIDParams) (*string, 
 		ID string
 	})
 	authorization := buildBearerAuthorization(params.Access)
+	versionedUserURL := fmt.Sprintf(userURL, APIVersion)
 
 	return &target.ID, c.sC.Call(backendClientParams{
 		ctx:           ctx,
 		method:        http.MethodGet,
-		url:           userURL,
+		url:           versionedUserURL,
 		authorization: authorization,
 		target:        target,
 	})
@@ -85,11 +94,12 @@ func (c *client) GetVehicleIDs(ctx context.Context, params *VehicleIDsParams) (*
 		VehicleIDs []string `json:"vehicles"`
 	})
 	authorization := buildBearerAuthorization(params.Access)
+	versionedVehicleURL := fmt.Sprintf(vehicleURL, APIVersion)
 
 	return &target.VehicleIDs, c.sC.Call(backendClientParams{
 		ctx:           ctx,
 		method:        http.MethodGet,
-		url:           vehicleURL,
+		url:           versionedVehicleURL,
 		authorization: authorization,
 		target:        target,
 	})
@@ -168,6 +178,11 @@ func (c *client) NewAuth(params *AuthParams) Auth {
 		testMode:     params.TestMode,
 		sC:           c.sC,
 	}
+}
+
+// SetAPIVersion sets version of Smartcar API to use
+func SetAPIVersion(version string) {
+	APIVersion = version
 }
 
 // Backend exposes methods needed for executing requests to Smartcar's API.

@@ -56,11 +56,37 @@ func TestBuildCompatibilityURLCountry(t *testing.T) {
 	assert.Equal(t, url, expectedURL)
 }
 
+func TestBuildCompatibilityURLVersion(t *testing.T) {
+	// Arrange
+	SetAPIVersion("2.0")
+	expectedURL := "https://api.smartcar.com/v2.0/compatibility/?country=US&scope=scope&vin=vin"
+
+	// Act
+	url := buildCompatibilityURL("vin", []string{"scope"}, "")
+
+	// Assert
+	assert.Equal(t, url, expectedURL)
+}
+
 func TestBuildVehicleURL(t *testing.T) {
 	// Arrange
 	ID := "vehicleId"
 	path := "/path"
-	expectedURL := vehicleURL + ID + path
+	expectedURL := fmt.Sprintf(vehicleURL, APIVersion) + ID + path
+
+	// Act
+	url := buildVehicleURL(path, ID)
+
+	// Assert
+	assert.Equal(t, expectedURL, url)
+}
+
+func TestBuildVehicleURLVersion(t *testing.T) {
+	// Arrange
+	SetAPIVersion("2.0")
+	ID := "vehicleId"
+	path := "/path"
+	expectedURL := fmt.Sprintf(vehicleURL, "2.0") + ID + path
 
 	// Act
 	url := buildVehicleURL(path, ID)
