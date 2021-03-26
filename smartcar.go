@@ -12,10 +12,6 @@ import (
 )
 
 const (
-	apiURL2           = "https://api.smartcar.com/v1.0/"
-	userURL2          = "https://api.smartcar.com/v1.0/user/"
-	vehicleURL2       = "https://api.smartcar.com/v1.0/vehicles/"
-	compatibilityURL2 = "https://api.smartcar.com/v1.0/compatibility/"
 	exchangeURL       = "https://auth.smartcar.com/oauth/token/"
 	apiURL            = "https://api.smartcar.com/v%s/"
 	userURL           = "https://api.smartcar.com/v%s/user/"
