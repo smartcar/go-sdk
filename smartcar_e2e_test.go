@@ -2,6 +2,7 @@ package smartcar
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -39,7 +40,8 @@ func (s *SmartcarE2ETestSuite) TestGetUserIDE2E() {
 	mockResponse := map[string]interface{}{
 		"id": mockUserID,
 	}
-	mockSmartcarAPI(userURL, buildBearerAuthorization(mockAccess), mockResponse)
+	versionedUserURL := fmt.Sprintf(userURL, APIVersion)
+	mockSmartcarAPI(versionedUserURL, buildBearerAuthorization(mockAccess), mockResponse)
 
 	res, err := s.client.GetUserID(context.TODO(), &UserIDParams{
 		Access: mockAccess,
@@ -56,7 +58,8 @@ func (s *SmartcarE2ETestSuite) TestGetVehicleIDsE2E() {
 	mockResponse := map[string]interface{}{
 		"vehicles": mockVehicleIDs,
 	}
-	mockSmartcarAPI(vehicleURL, buildBearerAuthorization(mockAccess), mockResponse)
+	versionedVehicleURL := fmt.Sprintf(vehicleURL, APIVersion)
+	mockSmartcarAPI(versionedVehicleURL, buildBearerAuthorization(mockAccess), mockResponse)
 
 	res, err := s.client.GetVehicleIDs(context.TODO(), &VehicleIDsParams{
 		Access: mockAccess,
