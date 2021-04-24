@@ -12,11 +12,11 @@ import (
 )
 
 const (
-	exchangeURL       = "https://auth.smartcar.com/oauth/token/"
-	apiURL            = "https://api.smartcar.com/v%s/"
-	userURL           = "https://api.smartcar.com/v%s/user/"
-	vehicleURL        = "https://api.smartcar.com/v%s/vehicles/"
-	compatibilityURL  = "https://api.smartcar.com/v%s/compatibility/"
+	exchangeURL      = "https://auth.smartcar.com/oauth/token/"
+	apiURL           = "https://api.smartcar.com/v%s/"
+	userURL          = "https://api.smartcar.com/v%s/user/"
+	vehicleURL       = "https://api.smartcar.com/v%s/vehicles/"
+	compatibilityURL = "https://api.smartcar.com/v%s/compatibility/"
 )
 
 // APIVersion is the default version of API to use
