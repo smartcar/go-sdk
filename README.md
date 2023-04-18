@@ -1,7 +1,6 @@
+# Smartcar Go SDK [![GoDoc](http://img.shields.io/badge/godoc-reference-blue.svg)](http://godoc.org/github.com/smartcar/go-sdk)
 
-
-# Smartcar Go SDK
-[![GoDoc](http://img.shields.io/badge/godoc-reference-blue.svg)](http://godoc.org/github.com/smartcar/go-sdk)
+> Note: This SDK is currently unmaintained, all features of the SDK still work as expected, but no updates are planned
 
 ## Overview
 
