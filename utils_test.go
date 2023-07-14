@@ -36,7 +36,7 @@ func TestBuildBearerAuthorization(t *testing.T) {
 
 func TestBuildCompatibilityURL(t *testing.T) {
 	// Arrange
-	expectedURL := "https://api.smartcar.com/v1.0/compatibility/?country=US&scope=scope&vin=vin"
+	expectedURL := "https://api.smartcar.com/v2.0/compatibility/?country=US&scope=scope&vin=vin"
 
 	// Act
 	url := buildCompatibilityURL("vin", []string{"scope"}, "")
@@ -47,7 +47,7 @@ func TestBuildCompatibilityURL(t *testing.T) {
 
 func TestBuildCompatibilityURLCountry(t *testing.T) {
 	// Arrange
-	expectedURL := "https://api.smartcar.com/v1.0/compatibility/?country=DE&scope=scope&vin=vin"
+	expectedURL := "https://api.smartcar.com/v2.0/compatibility/?country=DE&scope=scope&vin=vin"
 
 	// Act
 	url := buildCompatibilityURL("vin", []string{"scope"}, "DE")

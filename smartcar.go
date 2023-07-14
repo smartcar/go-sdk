@@ -20,7 +20,7 @@ const (
 )
 
 // APIVersion is the default version of API to use
-var APIVersion string = "1.0"
+var APIVersion string = "2.0"
 
 // UserIDParams is a param in client.GetUserID
 type UserIDParams struct {
