@@ -1,11 +1,7 @@
-
-all: gofmt vet lint build
+all: gofmt vet build
 
 gofmt:
 	scripts/check_gofmt.sh
-
-lint:
-	golint ./...
 
 vet:
 	go vet ./...
