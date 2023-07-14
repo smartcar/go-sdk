@@ -6,7 +6,6 @@ go:
 
 install:
   - go get -t -v ./...
-  - travis_retry go get -u golang.org/x/lint/golint
   - make
 script:
   - make test

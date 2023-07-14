@@ -70,15 +70,15 @@ import smartcar "github.com/smartcar/go-sdk"
 	)
 
 	// You can check the validity of your token by callint the IsTokenExpired method
-	isExpired := smartcarClient.IsTokenExpired(&smartcarClient.TokenExpiredParams{
+	isExpired := smartcarClient.IsTokenExpired(&smartcar.TokenExpiredParams{
 		Expiry: token.AccessExpiry,
 	})
 	```
 
-1. In order to send a request to a vehicle, you need to create a smartcar.Vehicle, and for that you need a vehicle ID. You can get a vehicleID by sending a request to smartcar.GetVehicleIDs, which will return a list of vehicleIDs associated with an access token.
+1. In order to send a request to a vehicle, you need to create a smartcar.Vehicle, and for that you need a vehicle ID. You can get a vehicleID by sending a request to smartcarClient.GetVehicleIDs, which will return a list of vehicleIDs associated with an access token.
 
 	```go
-	vehicleIDs, err := smartcar.GetVehicleIDs(
+	vehicleIDs, err := smartcarClient.GetVehicleIDs(
 		context.TODO(),
 		&smartcar.VehicleIDsParams{Access: token.Access},
 	)
@@ -87,7 +87,7 @@ import smartcar "github.com/smartcar/go-sdk"
 1. Construct vehicle with an ID, and an AccessToken, a UnitSystem is optional
 
 	```go
-	vehicleParams := smartcarClient.VehicleParams{
+	vehicleParams := smartcar.VehicleParams{
 		ID: (*vehicleIDs)[0],
 		AccessToken: token.Access,
 	}
