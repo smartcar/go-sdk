@@ -17,7 +17,6 @@
     docker_image_tag: 1.24
     execute_commands:
     - go get -t -v ./...
-    - go fmt
     - make
     volume_mappings:
     - /:/src/github.com/smartcar/go-sdk

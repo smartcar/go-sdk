@@ -12,7 +12,6 @@
     docker_image_tag: 1.14
     execute_commands:
     - go get -t -v ./...
-    - go fmt
     - make
     - make test
     shell: BASH
