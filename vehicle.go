@@ -153,7 +153,7 @@ type ChargeControl struct {
 // UnitSystem type that will have either imperic or metric.
 type UnitSystem string
 
-/// UnitSystem constants that initialize metric or imperial.
+// / UnitSystem constants that initialize metric or imperial.
 const (
 	Metric   UnitSystem = "metric"
 	Imperial UnitSystem = "imperial"
@@ -355,10 +355,10 @@ func (v *vehicle) Lock(ctx context.Context) (*Security, error) {
 }
 
 /*
-  SetUnits sets the unit system for a vehicle's instance. (i.e. Setting the unit system to metric, will
-		return the odometer in meters).
-  Note: Does not send a request to Smartcar's API, it just changes the unitSystem of the vehicle instance.
-		Therefore sending a new request after calling this method, the response will return the data using the unitSystem set.
+	  SetUnits sets the unit system for a vehicle's instance. (i.e. Setting the unit system to metric, will
+			return the odometer in meters).
+	  Note: Does not send a request to Smartcar's API, it just changes the unitSystem of the vehicle instance.
+			Therefore sending a new request after calling this method, the response will return the data using the unitSystem set.
 */
 func (v *vehicle) SetUnitSystem(params *UnitsParams) error {
 	if !(params.Units == Imperial || params.Units == Metric) { //compare to actuall unit system || params.Units == "imperial") { // check here if its part of the map. go enum
@@ -391,8 +391,8 @@ func (v *vehicle) StopCharge(ctx context.Context) (*ChargeControl, error) {
 }
 
 /*
-  request is an internal function used to make requests to Smartcar's vehicle API. It accepts an interface,
-  which is used to format the response.
+request is an internal function used to make requests to Smartcar's vehicle API. It accepts an interface,
+which is used to format the response.
 */
 func (v *vehicle) request(ctx context.Context, path, method string, params requestParams, data io.Reader, target interface{}) error {
 	return v.client.Call(backendClientParams{
