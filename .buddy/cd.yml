@@ -1,0 +1,35 @@
+- pipeline: cd
+  name: CD
+  refs:
+  - refs/heads/master
+  events:
+  - type: PUSH
+  fail_on_prepare_env_warning: true
+  variables:
+  - key: GH_TOKEN
+    value: $GH_TOKEN_PUBLIC_PACKAGES
+    type: VAR
+  description_required: true
+  actions:
+  - action: Install
+    type: BUILD
+    docker_image_name: library/golang
+    docker_image_tag: 1.24
+    execute_commands:
+    - go get -t -v ./...
+    - go fmt
+    - make
+    volume_mappings:
+    - /:/src/github.com/smartcar/go-sdk
+    shell: BASH
+  - action: Semantic Release
+    type: BUILD
+    docker_image_name: library/node
+    docker_image_tag: 10
+    execute_commands:
+    - npm install -g semantic-release@15.x.x
+    - semantic-release
+    cached_dirs:
+    - /root/.cache/pip
+    shell: BASH
+
