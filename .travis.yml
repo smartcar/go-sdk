@@ -11,13 +11,3 @@ script:
   - make test
 after_success:
   - bash <(curl -s https://codecov.io/bash)
-
-jobs:
-  include:
-    - stage: publish
-      language: node_js
-      node_js: 10
-      install:
-        - npm install -g semantic-release@15.x.x
-      script:
-        - semantic-release

@@ -1,0 +1,17 @@
+- pipeline: ci
+  name: CI
+  events:
+  - type: PUSH
+    refs:
+    - refs/heads/*
+  fail_on_prepare_env_warning: true
+  actions:
+  - action: Run tests - v1.14
+    type: BUILD
+    docker_image_name: library/golang
+    docker_image_tag: 1.14
+    execute_commands:
+    - go get -t -v ./...
+    - make
+    - make test
+    shell: BASH
