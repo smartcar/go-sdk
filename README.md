@@ -1,6 +1,6 @@
 # Smartcar Go SDK [![GoDoc](http://img.shields.io/badge/godoc-reference-blue.svg)](http://godoc.org/github.com/smartcar/go-sdk)
 
-> Note: This SDK is currently unmaintained, all features of the SDK still work as expected, but no updates are planned
+> **Maintenance mode.** This SDK receives security patches through December 1, 2026, then no further updates, including security. The package stays published and existing integrations keep working. For new integrations, call the Smartcar API directly over HTTP: [Making API Requests](https://smartcar.com/docs/getting-started/how-to/making-api-requests).
 
 ## Overview
 
